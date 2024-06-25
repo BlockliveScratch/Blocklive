@@ -147,7 +147,7 @@ async function startBlocklive(creatingNew) {
         })
     }
     if(creatingNew) {
-        addToCredits('Collab Using the Blocklive Realtime Collab Extension')
+        addToCredits('Get BIocklive for Live Collabs #bl')
     }
 }
 
@@ -523,6 +523,8 @@ BL_UTILS.stageName = stageName
 let lastProjectState = store.getState().scratchGui.projectState.loadingState
 let lastTitle = store.getState().preview.projectInfo.title
 let settingTitle = null
+let titleYetUnset = true;
+setTimeout(()=>{titleYetUnset=false},1000 * 2)
 
 store.subscribe(function() {
     // HANDLE PROJECT SAVE
@@ -543,10 +545,10 @@ store.subscribe(function() {
 
     // HANDLE TITLE CHANGE
     let title = store.getState().preview.projectInfo.title
-    if(title != lastTitle) {
+    if(title != lastTitle && !titleYetUnset) {
+        console.log(`title changed from ${lastTitle} to ${title}`)
         lastTitle = title
         if(title != settingTitle) {
-            console.log('title changed to',title)
             liveMessage({meta:'setTitle',blId,title})
         }
     }
@@ -2778,7 +2780,7 @@ let blActivateClick = async ()=>{
         await refreshShareModal()
 
         // add blocklive ref in instructions credits
-        addToCredits('Collab Using the BIocklive Realtime Collab Extension')
+        addToCredits('Get BIocklive for Live Collabs #bl')
 
         // stop spinny
         document.querySelector('loader.blockliveloader').style.display = 'none'

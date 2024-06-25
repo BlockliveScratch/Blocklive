@@ -75,13 +75,16 @@ function sanitize(string) {
   return string.replace(reg, (match)=>(map[match]));
 }
 
-function getbox(blId,title,scratchId,lastModified,lastModBy,projectExists) {
+function getbox(blId,title,scratchId,lastModified,lastModBy,projectExists,online) {
   scratchId=sanitize(scratchId);
   title=sanitize(title);
   blId=sanitize(blId);
   lastModBy=sanitize(lastModBy);
 
-    return`
+  let gunkId = Math.random().toString(36).substring(2);
+  generateActiveUsersPanel(online).then(panel=>document.getElementById(gunkId).innerHTML = panel)
+
+    return `
     <div class="media-item-content not-shared">
       <div class="media-thumb">
         <a href="/projects/${scratchId}/">
@@ -95,17 +98,121 @@ function getbox(blId,title,scratchId,lastModified,lastModBy,projectExists) {
           Last modified: ${timeSince(new Date(lastModified))} ago by ${lastModBy}
           
         </span>
+      <div class="seeInsideContainer">
+
       <a href="/projects/${scratchId}/#editor" data-control="edit" class="media-control-edit small button grey">
-	      <span>See inside</span>
+	     
+      <span>See inside</span>
+      <div class="activeContainer" id=${gunkId}></div>
+
       </a>
+
+        </div>
+
       </div>
       <div class="media-action">
 	      <div><a class="media-trash" style="color:#ff4ad5" onclick="leaveId(${scratchId},this.parentElement.parentElement.parentElement.parentElement);sendLeave(${scratchId},${blId})">${projectExists ? "Unlink" : "Leave"}</a></div>
       </div>
-    </div>`
+    </div>`;
 }
 
-https://stackoverflow.com/questions/3177836/how-to-format-time-since-xxx-e-g-4-minutes-ago-similar-to-stack-exchange-site
+
+async function generateActiveUsersPanel(active) {
+  if(active.length>0) {
+    return `
+      <div class="activeContainer">
+        ${(await Promise.all(active.map(async username=>(await getUserInfo(username))))).map(userInfo=>`
+          
+        <div class="onlineBubble" style="background-image:url(${userInfo.pic}); --bubbleUsername:'${userInfo.username}'"></div>`
+
+          ).join('\n')}
+            
+      </div>
+    `
+  } else {
+    return ""
+  }
+}
+
+let pageCss = `
+
+  .onlineBubble{
+    height:26px;
+    width:26px;
+    outline:solid 3px #ff4ad5;
+    border-radius:10px;
+    background-size:100% auto;
+    text-shadow:none;
+
+    margin-right:8px;
+
+  }
+    .onlineBubble::after{
+      background:black;
+      width:100px;
+      height:30px;
+    }
+
+.onlineBubble:hover::after {
+    opacity: 100%;
+}
+
+.onlineBubble::after {
+    content: var(--bubbleUsername);
+    background: #ff4ad5;
+    color: white;
+    padding: 1px;
+    border-radius: 5px;
+    transform: translate(0px, -23px);
+    display: inline-block;
+    width: fit-content;
+    height: fit-content;
+    opacity: 0%;
+    transition: 0.2s opacity;
+
+}
+
+
+  .seeInsideContainer, .activeContainer{
+    display:flex;
+    flex-flow:row;
+    align-items:flex-end;
+    // gap:8px;
+  }
+
+   .activeContainer{
+   align-items:center;
+   }
+
+   .tailText{
+    color:grey
+   }
+
+
+  .media-control-edit{
+  display:flex !important;
+  flex-flow:row;
+  align-items:center;
+  flex-grow:0;
+width:fit-content;
+
+  }
+
+  .media-info-item.date.shortDateFormat{
+      width:200%;
+  }
+`
+
+
+function injectStyle() {
+  const style = document.createElement('style');
+  style.textContent = pageCss;
+  document.head.append(style);
+}
+injectStyle()
+
+
+// https://stackoverflow.com/questions/3177836/how-to-format-time-since-xxx-e-g-4-minutes-ago-similar-to-stack-exchange-site
 function timeSince(date) {
 
     var seconds = Math.floor((new Date() - date) / 1000);
@@ -141,7 +248,7 @@ function getId(listItem) {
 
 
 let oldAttrs = {}
-function convertToBlocklive(listItem,projectObj) {
+async function convertToBlocklive(listItem,projectObj) {
   let atts = {}
     atts.color = listItem.children[0].children[1].children[0].children[0].style.color
     listItem.children[0].children[1].children[0].children[0].style.color = '#ff4ad5'
@@ -158,6 +265,11 @@ function convertToBlocklive(listItem,projectObj) {
 
     oldAttrs[projectObj.scratchId] = atts
 
+    let seeInside = listItem.querySelector('a span')
+    let activeUsersPanel = await generateActiveUsersPanel(projectObj.online);
+    seeInside.insertAdjacentHTML('afterend',activeUsersPanel)
+
+
   }
 function cleanseOfBlockliveness(scratchId, listItem) {
   let atts = oldAttrs[scratchId]
@@ -172,8 +284,34 @@ function cleanseOfBlockliveness(scratchId, listItem) {
 
 function addProject(projectObj, projectExists) {
     let newBox = document.createElement('li')
-    newBox.innerHTML = getbox(projectObj.blId,projectObj.title,projectObj.scratchId,projectObj.lastTime,projectObj.lastUser,projectExists)
+    newBox.innerHTML = getbox(projectObj.blId,projectObj.title,projectObj.scratchId,projectObj.lastTime,projectObj.lastUser,projectExists,projectObj.online)
     document.querySelector('ul.media-list').insertBefore(newBox,document.querySelector('ul.media-list').firstChild)
+}
+
+usersCache = {}
+
+async function getUserInfo(username) {
+    if(!username) {return}
+    if(username?.toLowerCase() in usersCache && usersCache[username?.toLowerCase()]?.pk) {return usersCache[username?.toLowerCase()]}
+
+    let res
+    try{ 
+        res=await (await fetch('https://scratch.mit.edu/site-api/users/all/' + username?.toLowerCase())).json()
+    } catch(e) {
+        return null
+    }
+    if(!res) {
+        return null
+    }
+
+    let user = res.user
+    user = getWithPic(user)
+    usersCache[user.username.toLowerCase()] = user
+    return user
+}
+function getWithPic(user) {
+    user.pic = `https://uploads.scratch.mit.edu/get_image/user/${user.pk}_60x60.png`
+    return user
 }
 
 

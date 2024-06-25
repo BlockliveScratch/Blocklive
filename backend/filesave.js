@@ -19,10 +19,9 @@ if(!fs.existsSync('storage')) {
 
 export function saveMapToFolder(obj, dir) {
     // if obj is null, return
-    if(!obj) {console.warn('tried to save null object to dir: ' + dir); return}
+    if(!obj) {console.error('tried to save null object to dir: ' + dir); return}
     // make directory if it doesnt exist
     if (!fs.existsSync(dir)){fs.mkdirSync(dir,{recursive:true})}
-    let promises = []
     Object.entries(obj).forEach(entry=>{
      let stringg = JSON.stringify(entry[1])
      if(stringg.length >= removeChangesStringLength && entry[1]?.project?.changes) {
@@ -36,22 +35,19 @@ export function saveMapToFolder(obj, dir) {
           console.error(`skipping writing file "${entry[0]}" because its too long or noname`)
           return
      }
-         let fd=null;
          try{
-               let fd = fs.openSync(dir+path.sep+entry[0],'w')
-               fs.writeFileSync(fd,stringg);
-               fs.closeSync(fd)
+               console.log(`writing ${entry[0]}`)
+               fs.writeFileSync(dir+path.sep+entry[0],stringg)
          } catch (e) {
               console.error('Error when saving filename: ' + entry[0])
               console.error(e)
-              if(fd) {fs.closeSync(fd)}
          }
     })
 }
 
 const removeChangesStringLength = 514280;
 const maxStringWriteLength = 51428000; //absolute max, hopefully never reached
-export async function saveMapToFolderAsync(obj, dir, failsafeEh) {
+export async function saveMapToFolderAsync(obj, dir, failsafeEh, dontRemoveChanges) {
      // if obj is null, return
      if(!obj) {console.warn('tried to save null object to dir: ' + dir); return}
      // make directory if it doesnt exist
@@ -61,7 +57,7 @@ export async function saveMapToFolderAsync(obj, dir, failsafeEh) {
           let id = sanitize(entry[0] + '')
           let contentsObject = entry[1]
           let stringg = JSON.stringify(contentsObject);
-          if(stringg.length >= removeChangesStringLength && contentsObject?.project?.changes) {
+          if(stringg.length >= removeChangesStringLength && contentsObject?.project?.changes && !dontRemoveChanges) {
                console.log(`removing changes to save length on projectId: ${id}`)
                contentsObject = clone(contentsObject,true,2)
                contentsObject.project.changes=[]

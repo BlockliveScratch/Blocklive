@@ -107,26 +107,33 @@ async function saveAsync() {
      await sleep(10); // in case there is an error that nans lastid out
      await fsp.writeFile(lastIdPath,(sessionManager.lastId).toString());
      await fsp.writeFile(freePassesPath,JSON.stringify(freePasses))
-     console.log('writing blocklives')
-     await saveMapToFolderAsync(sessionManager.blocklive,blocklivePath,true);
-     console.log('DONE writing blocklives')
-     await saveMapToFolderAsync(userManager.users,usersPath);
+
+     // DONT SAVE BLOCKLIVE PROJECTS BECAUSE ITS TOO TAXING AND IT HAPPENS ANYWAYS ON OFFLOAD
+     // console.log('writing blocklives')
+     // await saveMapToFolderAsync(sessionManager.blocklive,blocklivePath,true);
+     // console.log('DONE writing blocklives')
+     // await saveMapToFolderAsync(userManager.users,usersPath);
      await saveRecent();
 }
 let isFinalSaving = false;
 async function finalSave() {
-     if(isFinalSaving) {return} // dont final save twice
-     console.log('sending message "' + restartMessage + '"')
-     sessionManager.broadcastMessageToAllActiveProjects(restartMessage);
-     await sleep(1000 * 2);
-     isFinalSaving = true
-     console.log('final saving...')
-     fs.writeFileSync(lastIdPath,(sessionManager.lastId).toString());
-     fs.writeFileSync(freePassesPath,JSON.stringify(freePasses))
-     sessionManager.finalSaveAllProjects(); // now they automatically offload
-     saveMapToFolder(userManager.users,usersPath);
-     await saveRecent();
-     process.exit()
+     try{
+          if(isFinalSaving) {return} // dont final save twice
+          console.log('sending message "' + restartMessage + '"')
+          sessionManager.broadcastMessageToAllActiveProjects(restartMessage);
+          await sleep(1000 * 2);
+          isFinalSaving = true
+          console.log('final saving...')
+          fs.writeFileSync(lastIdPath,(sessionManager.lastId).toString());
+          fs.writeFileSync(freePassesPath,JSON.stringify(freePasses))
+          await sessionManager.finalSaveAllProjects(); // now they automatically offload
+          saveMapToFolder(userManager.users,usersPath);
+          await saveRecent();
+          process.exit()
+     } catch (e) {
+          await sleep(1000 * 10); // wait ten seconds before trying to quit again
+          isFinalSaving = false;
+     }
 }
 saveMapToFolder(sessionManager.blocklive,blocklivePath)
 

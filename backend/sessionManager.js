@@ -400,6 +400,15 @@ export default class SessionManager {
         saveMapToFolder(this.blocklive, blocklivePath)
         this.blocklive = {}
     }
+    async finalSaveAllProjectsAsync() {
+        Object.entries(this.blocklive).forEach(entry => {
+            let project = entry[1]
+            let id = entry[0]
+            project.trimChanges()
+        })
+        await saveMapToFolderAsync(this.blocklive, blocklivePath,false,true)
+        this.blocklive = {}
+    }
     // Deprecated
     async offloadStaleProjectsAsync() {
         for (let entry of Object.entries(this.blocklive)) {
