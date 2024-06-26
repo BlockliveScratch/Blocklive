@@ -6,7 +6,9 @@ export const freePassesPath = 'storage/freePasses.json'
 export const failedAuthLog = {}
 export const secondTimeSuccessAuthLog = {};
 
-
+let cachedComments = [];
+let lastTimeCheckedComments = 0;
+const commentsRateLimit = 1000 * 5;
 
 function logAuth(username, success, word, info) {
     if (!username) { return; }
@@ -43,6 +45,12 @@ function getAuthProjectId() {
     return authProjects[idIndex];
 }
 
+async function getAuthProjectData() {
+    const projectId = getAuthProjectId();
+    const data = await (await fetch(`https://api.scratch.mit.edu/projects/${projectId}`)).json();
+    return { projectId, projectUsername: data.author.username };
+}
+
 let userManager
 let sessionManager
 export function setPaths(app, userManagerr, sessionManagerr) {
@@ -70,6 +78,8 @@ export function setPaths(app, userManagerr, sessionManagerr) {
                 res.send({ err: 'client code not found', clientCode });
                 return;
             }
+            
+            await sleep(CLOUD_WAIT) // ! THIS IS REALLY IMPORTANT !
 
             let cloud = await getVerificationCloud(tempCode)
             if (!cloud || cloud?.err) {
@@ -155,6 +165,30 @@ async function getVerificationCloud(tempCode) {
     let cloud = vars?.map(cloudObj => ({ content: cloudObj?.value, user: cloudObj?.user }));
     cloud = cloud.filter(com => String(com.content) == String(tempCode)).reverse()[0];
     return cloud;
+}
+
+async function checkComments() {
+    if (lastTimeCheckedComments + commentsRateLimit > Date.now()) {
+        return cachedComments;
+    }
+
+    let { projectUsername, projectId } = await getAuthProjectData();
+
+    const data = await (await fetch(`https://api.scratch.mit.edu/users/${projectUsername}/projects/${projectId}/comments?offset=0&limit=40&rand=${Math.random()}`)).json();
+    cachedComments = data;
+    lastTimeCheckedComments = Date.now();
+    return data;
+}
+
+async function verifyCommentCode(code, retried=false) {
+    if (retried) { await sleep(commentsRateLimit); }
+    const data = await checkComments();
+    const comment = data?.comments?.filter(c => c.content == code).reverse()[0];
+    if (!comment) { 
+        if (!retried) { return await verifyCommentCode(code, true) }
+        return null;
+    }
+    return comment;
 }
 
 
