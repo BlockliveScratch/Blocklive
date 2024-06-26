@@ -1,21 +1,23 @@
 
 import { bypassAuth } from "./index.js";
-import { ids } from "./secrets/secrets.js";
+import { authProjects } from "./secrets/secrets.js";
 import fs from 'fs'
 export const freePassesPath = 'storage/freePasses.json'
 export const failedAuthLog = {}
+export const secondTimeSuccessAuthLog = {};
 
-const AUTH_PROJECTID = 854593681;
 
-function logAuth(username, success, word) {
+
+function logAuth(username, success, word, info) {
     if (!username) { return; }
     if (success) {
-        // console.error(`✅ Successfully ${word}ed user ${username}`)
+        if(word!='authenticate'){console.log(`✅ Successfully ${word}ed user ${username}`)}
         if (username in failedAuthLog) {
             delete failedAuthLog[username]
+            secondTimeSuccessAuthLog[username] = true;
         }
     } else {
-        failedAuthLog[username] = true;
+        failedAuthLog[username] = (failedAuthLog[username] instanceof Array) ? (failedAuthLog[username].length > 10 ? failedAuthLog[username] : [...failedAuthLog[username] ,info]) : [info]; 
         console.error(`🆘 Failed to ${word} user ${username}`)
 
     }
@@ -30,15 +32,15 @@ function sleep(millis) {
 
 let idIndex = 0;
 export function getAuthStats() {
-    return { idIndex, info: getAuthProjectInfo(), failed: failedAuthLog }
+    return { idIndex, info: getAuthProjectId(), failed: failedAuthLog, successCount:Object.keys(secondTimeSuccessAuthLog).length }
 }
 
 function generateAuthCode() {
     return Math.floor(Math.random() * 1000000).toString()
 }
 
-function getAuthProjectInfo() {
-    return AUTH_PROJECTID;
+function getAuthProjectId() {
+    return authProjects[idIndex];
 }
 
 let userManager
@@ -53,7 +55,8 @@ export function setPaths(app, userManagerr, sessionManagerr) {
         let verifyCode = generateAuthCode();
 
         pendingMap[clientCode] = verifyCode;
-        res.send({ code: verifyCode, project: getAuthProjectInfo() })
+        setTimeout(()=>{delete pendingMap[clientCode]},1000 * 60) // delete pending verifications after one minute
+        res.send({ code: verifyCode, project: getAuthProjectId() })
     })
 
     const CLOUD_WAIT = 1000 * 5;
@@ -76,13 +79,13 @@ export function setPaths(app, userManagerr, sessionManagerr) {
             }
             if (cloud?.code == 'nocon') {
                 grantFreePass(req.headers.uname)
-                logAuth(req.headers.uname, true, 'verify')
+                logAuth(req.headers.uname, true, 'verify', 'server couldn\'t query cloud')
                 res.send({ freepass: true })
                 return;
             }
             if (!cloud) {
                 res.send({ err: 'no cloud' })
-                logAuth(req.headers.uname, false, 'verify')
+                logAuth(req.headers.uname, false, 'verify', 'no cloud var found')
                 return;
             }
             console.log('cloud', cloud)
@@ -92,17 +95,24 @@ export function setPaths(app, userManagerr, sessionManagerr) {
             let token = userManagerr.getUser(username)?.token
             if (!token) {
                 res.send({ err: 'user not found', username });
-                logAuth(username, false, 'verify')
+                logAuth(username, false, 'verify', 'user not stored in database')
                 return;
             }
 
             deleteFreePass(username)
             res.send({ token, username })
-            logAuth(username, true, 'verify')
+            logAuth(username, true, 'verify', 'success')
             return;
         } catch (err) {
             next(err);
         }
+    })
+    app.post('/verify/recordError',(req,res)=>{
+        let message = req.body.msg;
+        let username = req.headers.uname
+        logAuth(username,false,'set cloud',message)
+        console.log('msg',message)
+        res.end()
     })
 }
 
@@ -112,13 +122,13 @@ let CLOUD_CHECK_RATELIMIT = 1000 * 2; // every 2 seconds
 
 async function checkCloud() {
     try {
-        cachedCloud = await (await fetch(`https://clouddata.scratch.mit.edu/logs?projectid=${AUTH_PROJECTID}&limit=40&offset=0&rand=${Math.random()}`)).json()
+        cachedCloud = await (await fetch(`https://clouddata.scratch.mit.edu/logs?projectid=${getAuthProjectId()}&limit=40&offset=0&rand=${Math.random()}`)).json()
         cachedTime = Date.now()
         return cachedCloud
     } catch (e) {
         console.error(e);
         cachedCloud = { code: 'nocon' }
-        idIndex = (idIndex + 1) % ids.projects.length
+        idIndex = (idIndex + 1) % authProjects.length
         return cachedCloud
     }
 }
@@ -172,11 +182,12 @@ export function deleteFreePass(username) {
 
 export function authenticate(username, token) {
     if (bypassAuth) { return true }
+    if(!username) { console.error(`undefined username attempted to authenticate with token ${token}`); return '*'}
     let success = hasFreePass(username) || userManager.getUser(username).token == token
     if (success) {
         logAuth(username, true, 'authenticate')
     } else {
-        logAuth(username, false, 'authenticate')
+        logAuth(username, false, 'authenticate', `failed to authenticate with token "${token}"`)
         // console.error(`🟪 User Authentication failed for user: ${username}, bltoken: ${token}`)
 
     }

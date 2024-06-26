@@ -23,6 +23,26 @@ async function getBlockliveToken(username) {
     return token;
 }
 
+async function recordVerifyError(message) {
+    if(!message) {message = `undefined, ${await getVerifyError()}`}
+    console.log('recodring error',message)
+    if(!message) {message = 'unspecificed error'}
+    if(message instanceof Error) {message = `${message.trace}`}
+    chrome.storage.local.set({verifyError:message});
+    fetch(`${apiUrl}/verify/recordError`,{
+        method:'post',
+        body:JSON.stringify({msg:message}),
+        headers:{uname,'Content-Type': 'application/json'}
+    })
+}
+async function getVerifyError() {
+    return (await chrome.storage.local.get('verifyError')).verifyError
+}
+
+function clearCurrentBlToken() {
+    storeBlockliveToken(uname,null)
+}
+
 let verifying = false;
 let endVerifyCallbacks = []
 let startVerifyCallbacks = []
@@ -62,22 +82,31 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 let project = verifyResponse.project
 
                 sendResponse({code,project})
-            } catch (e) {console.error(e); endVerifying(false)}
-        }
+            } catch (e) {console.error(e); endVerifying(false); recordVerifyError(e)}
+        } else {sendResponse(false)}
     } else if (request.meta == 'setCloud') {
-        console.log('setCloud')
+        console.log('setCloud',request.res)
+        let res = request.res
+        if(res===true) {res={ok:true}}
         try{
+            if(!res?.ok) {
+                endVerifying(false)
+                recordVerifyError(res?.err)
+            }
             let tokenResponse =  await (await fetch(`${apiUrl}/verify/userToken?code=${clientCode}`,{headers:{uname}})).json()
         
             console.log('tokenResponse',tokenResponse)
             if(tokenResponse.freepass) {
                 storeBlockliveToken(uname,`freepass ${Date.now()}`,true)
                 endVerifying(true)
+            } else if(tokenResponse.err) {
+                endVerifying(false)
             } else {
                 storeBlockliveToken(tokenResponse.username,tokenResponse.token,true) 
                 endVerifying(true)
             }
         } catch(e) {
+            recordVerifyError(e)
             endVerifying(false)
         }
     }
@@ -96,6 +125,14 @@ chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => 
         return true;
     }  else if (request.meta == 'verifying') {
         sendResponse(verifying)
+    } else if (request.meta=='getVerifyError') {
+        getVerifyError().then(er=>sendResponse(er))
+        return true;
+    } else if (request.meta == 'dontShowVerifyError') {
+        chrome.storage.local.set({dontShowVerifyError:request.val})
+    } else if (request.meta == 'getShowVerifyError') {
+        chrome.storage.local.get('dontShowVerifyError').then(res=>sendResponse(res.dontShowVerifyError))
+        return true;
     }
 })
 

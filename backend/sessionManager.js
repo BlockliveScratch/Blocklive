@@ -6,6 +6,7 @@ import { blocklivePath, lastIdPath, saveMapToFolder, saveMapToFolderAsync, scrat
 import { Blob } from 'node:buffer'
 import { countPopup, countRecent, countRecentRealtime, countRecentShared, countUniquePopup } from './recentUsers.js';
 import { getAuthStats } from './scratch-auth.js';
+import { numWithCreds, numWithoutCreds } from './index.js';
 
 const OFFLOAD_TIMEOUT_MILLIS = 45 * 1000 // you get two minutes before the project offloads
 
@@ -785,6 +786,8 @@ export default class SessionManager {
         stats.popupUnique1week = countUniquePopup(7)
 
         stats.auth = getAuthStats();
+        stats.auth.numWithCreds = numWithCreds;
+        stats.auth.numWithoutCreds = numWithoutCreds;
         return stats;
     }
 

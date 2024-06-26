@@ -228,7 +228,8 @@ let messageHandlers = {
                let loggingMsg = '🔴 FILTERED CHAT: ' + '"' + text + '" [' + sender + '->' + sentTo.join(',') + ' | scratchid: ' + project.scratchId + ']'
                console.error(loggingMsg)
                postText(loggingMsg)
-               data.msg.msg.text = '*'.repeat(text.length)
+               text = '*'.repeat(text.length)
+               data.msg.msg.text = text
           // return;
           }
 
@@ -598,9 +599,14 @@ app.get('/verify/bypass',(req,res)=>{
      res.send(bypassAuth)
 })
 
+export let numWithCreds = 0
+export let numWithoutCreds = 0
 function fullAuthenticate(username,token,blId) {
+     if(token) {numWithCreds++}
+     else {numWithoutCreds++}
      if(bypassAuth) {return true} // remove once the new version has passed
      // and remove line 448 "sessionManager.canUserAccessProject"
+     if(!username) { console.error(`undefined username attempted to authenticate on project ${blId} with token ${token}`); username = '*'}
      let userAuth = authenticate(username,token)
      let authAns = userAuth && sessionManager.canUserAccessProject(username,blId);
      if(!authAns && userAuth) {

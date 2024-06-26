@@ -1,7 +1,7 @@
 {
     "name": "Blocklive: Scratch Realtime Collaboration",
     "description": "Multiple Scratchers Work together in Real Time on a Single Project",
-    "version": "0.1.14",
+    "version": "0.1.15",
     "icons": {
        "128": "icon128.png" 
     },

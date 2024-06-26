@@ -271,3 +271,22 @@ br{
       transform: rotateX(calc(360deg));
       /* flex-flow:row-reverse; */
   }
+
+  .requestError{
+    /* text-align: center; */
+    align-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding:10px;
+  }
+
+  unverified{
+    display:none;
+    position: absolute;
+    top:10px;
+    right:10px;
+    color:white;
+    background-color: #ff00e6;
+    /* opacity: 50%; */
+  }
