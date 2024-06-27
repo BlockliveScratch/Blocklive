@@ -214,6 +214,8 @@ async function joinExistingBlocklive(id) {
     liveMessage({meta:"joinSession"}) // join sessionManager session
     readyToRecieveChanges = true
     pauseEventHandling = false;
+
+    reloadOnlineUsers();
     // hackyRefreshFlyoutVariables()
 
     setTimeout(BL_UTILS.refreshFlyout,100) // todo figure way other than timeout
