@@ -79,7 +79,7 @@ export function setPaths(app, userManagerr, sessionManagerr) {
                 return;
             }
             
-            await sleep(CLOUD_WAIT) // ! THIS IS REALLY IMPORTANT !
+            await sleep(500) // Makes sure cloud is ready to be called and we don't need to spend extra time on retrying
 
             let cloud = await getVerificationCloud(tempCode)
             if (!cloud || cloud?.err) {
