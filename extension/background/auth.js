@@ -25,9 +25,9 @@ async function getBlockliveToken(username) {
 
 async function recordVerifyError(message) {
     if(!message) {message = `undefined, ${await getVerifyError()}`}
-    console.log('recodring error',message)
     if(!message) {message = 'unspecificed error'}
-    if(message instanceof Error) {message = `${message.trace}`}
+    if(message instanceof Error) {message = `${message.stack}`}
+    console.log('recodring error',message)
     chrome.storage.local.set({verifyError:message});
     fetch(`${apiUrl}/verify/recordError`,{
         method:'post',
@@ -55,12 +55,23 @@ function endVerifying(success) {
     endVerifyCallbacks.forEach(func=>func?.(success))
 }
 
+chrome.runtime.onInstalled.addListener((details)=>{
+
+    chrome.storage.local.set({dontShowVerifyError:false})
+
+    if(details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
+    } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
+    }
+  })
+
+
 let clientCode = null;
 const VERIFY_RATELIMIT = 1000 * 60 * 10 // wait ten minutes before trying to update again
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     ;
     (async ()=>{
     if (request.meta == 'verify?') {
+        if(uname=='*') {return} // dont verify if user is logged out
         console.log('verify recieved')
         let token = await getCurrentBlToken();
         let freepassExpired = false;
@@ -69,18 +80,28 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if(Date.now() - passDate > VERIFY_RATELIMIT) {freepassExpired = true}
         }
         if(!token || freepassExpired) {
-            startVerifying()
 
             try{
                 clientCode = Math.random().toString()
                 console.log('client code',clientCode)
 
-                let verifyResponse = await (await fetch(`${apiUrl}/verify/start?code=${clientCode}`)).json()
+                let verifyResponse;
+                try{
+                    verifyResponse = await (await fetch(`${apiUrl}/verify/start?code=${clientCode}`,{headers:{uname}})).json()
+                } catch (e) {
+                    console.error('verify init network request error');
+                    chrome.storage.local.set({verifyServerConnErr:true})
+                    sendResponse() // empty resposne means dont do it;
+                    return;
+                }
+                chrome.storage.local.set({verifyServerConnErr:false})
+
                 console.log('verify response',verifyResponse)
 
                 let code = verifyResponse.code
                 let project = verifyResponse.project
 
+                startVerifying()
                 sendResponse({code,project})
             } catch (e) {console.error(e); endVerifying(false); recordVerifyError(e)}
         } else {sendResponse(false)}
@@ -100,6 +121,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 storeBlockliveToken(uname,`freepass ${Date.now()}`,true)
                 endVerifying(true)
             } else if(tokenResponse.err) {
+                recordVerifyError(tokenResponse.err)
                 endVerifying(false)
             } else {
                 storeBlockliveToken(tokenResponse.username,tokenResponse.token,true) 
@@ -124,7 +146,10 @@ chrome.runtime.onMessageExternal.addListener((request, sender, sendResponse) => 
         endVerifyCallbacks.push(sendResponse)
         return true;
     }  else if (request.meta == 'verifying') {
-        sendResponse(verifying)
+        chrome.storage.local.get('verifyServerConnErr').then(res=>{
+            sendResponse(res.verifyServerConnErr ? 'nocon' : verifying);
+        })
+        return true;
     } else if (request.meta=='getVerifyError') {
         getVerifyError().then(er=>sendResponse(er))
         return true;
@@ -162,6 +187,6 @@ function storeBlockliveToken(username,token,current) {
     if(current) {currentBlToken = token}
 }
 
-async function getConfimationCode(tempCode) {
-    return await (await fetch(`${apiUrl}/verify/start?code=${tempCode}`)).json();
-}
+// async function getConfimationCode(tempCode) {
+//     return await (await fetch(`${apiUrl}/verify/start?code=${tempCode}`)).json();
+// }

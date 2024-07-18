@@ -102,12 +102,15 @@ setTimeout(()=>{chrome.runtime.sendMessage({meta:"getUsernamePlus"},setSignedin)
                 if(list.noauth) {showNoAuthMessage()}
                 else {list.forEach(addFriendGUI)}
             }))
-            .catch((e)=>{document.querySelector('#friends').innerHTML = `<span class="requestError" style="color:red;"><span>Request Error :( <br><br>${e.stack.replace(new RegExp(`chrome-extension://${chrome.runtime.id}/`,'g'),'')}</span><span>`})
+            .catch((e)=>{
+                document.querySelector('#friends').innerHTML = `<span class="requestError" style="color:red;"><span>Request Error :( <br><br>${e.stack.replace(new RegExp(`chrome-extension://${chrome.runtime.id}/`,'g'),'')}</span><span>`;
+            })
     }
 });
 
 function showNoAuthMessage() {
     document.querySelector('#friends').innerHTML = `<div style="color:red; text-align:center; font-size: medium; padding:10px; justify-self:center;"><span style="background:white;">You're not verified with blocklive. <br> <br> To verify, open scratch in a new tab and wait for 10 seconds. <br><br> If you're still not verified, contact @ilhp10 or @rgantzos </span></div>`
+
 }
 
 document.getElementById('discord').onclick = ()=>{

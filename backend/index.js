@@ -1,6 +1,6 @@
 // be mindful of:
 // numbers being passed as strings
-export const bypassAuth = true // until everyone gets the new client version
+export const bypassUserAuth = true // until everyone gets the new client version
 
 ///////////
 import express from 'express'
@@ -15,15 +15,14 @@ import path from 'path';
 import https from 'https'
 import http from 'http'
 
-let server;
+let httpServer = http.createServer(app);
+let httpsServer = null
 
-if(os.platform()=='darwin') { // || os.platform()=='win32') { // I use windows...
-     server = http.createServer(app);
-} else {  
+if(!['darwin','win32'].includes(os.platform())) {
      let homedir = '/home/opc'
      let privateKey = fs.readFileSync( homedir + path.sep + 'letsencrypt/live/spore.us.to/privkey.pem' );
      let certificate = fs.readFileSync( homedir + path.sep + 'letsencrypt/live/spore.us.to/fullchain.pem' );
-     server = https.createServer({
+     httpsServer = https.createServer({
           key: privateKey,
           cert: certificate,
      },app); 
@@ -36,7 +35,14 @@ if(os.platform()=='darwin') { // || os.platform()=='win32') { // I use windows..
 /////////
 
 import {Server} from 'socket.io'
-const io = new Server(server, {
+let ioHttps = null
+if(httpsServer) {
+     ioHttps = new Server(httpsServer, {
+          cors:{origin:'*'},
+          maxHttpBufferSize:2e7
+     });
+}
+const ioHttp = new Server(httpServer, {
      cors:{origin:'*'},
      maxHttpBufferSize:2e7
 });
@@ -211,11 +217,12 @@ let messageHandlers = {
      'chat':(data,client)=>{
           const BROADCAST_KEYWORD = 'toall '
 
+          delete data.msg.msg.linkify
           let text = String(data.msg.msg.text)
           let sender = data.msg.msg.sender
           let project = sessionManager.getProject(data.blId)
 
-          if(!fullAuthenticate(sender,data.token,data.blId)) {client.send({noauth:true}); return;}
+          if(!fullAuthenticate(sender,data.token,data.blId,true)) {client.send({noauth:true}); return;}
           if(admin.includes(sender?.toLowerCase()) && text.startsWith(BROADCAST_KEYWORD)) {
                let broadcast=text.slice(BROADCAST_KEYWORD.length)
                console.log(`broadcasting message to all users: "${broadcast}" [${sender}]`)
@@ -226,10 +233,14 @@ let messageHandlers = {
           if(filter.isVulgar(text)) {
                let sentTo = project.session.getConnectedUsernames().filter(uname=>uname!=sender?.toLowerCase())
                let loggingMsg = '🔴 FILTERED CHAT: ' + '"' + text + '" [' + sender + '->' + sentTo.join(',') + ' | scratchid: ' + project.scratchId + ']'
+               
+               text = filter.getCensored(text)
+               data.msg.msg.text = text
+              
+               loggingMsg = loggingMsg + `\nCensored as: "${text}"`
                console.error(loggingMsg)
                postText(loggingMsg)
-               text = '*'.repeat(text.length)
-               data.msg.msg.text = text
+               // text = '*'.repeat(text.length)
           // return;
           }
 
@@ -246,7 +257,9 @@ let messageHandlers = {
 
 let sendMessages = ['blProjectInfo','projectChange','loadFromId','projectChanges']
 
-io.on('connection', (client) => {
+if(httpsServer){ioHttps.on('connection', onSocketConnection);}
+ioHttp.on('connection', onSocketConnection);
+function onSocketConnection(client) {
      client.on("message",(data,callback)=>{
           // console.log('message recieved',data,'from: ' + client.id)
           if(data.type in messageHandlers) {
@@ -271,7 +284,7 @@ io.on('connection', (client) => {
      client.on('disconnect',(reason)=>{
           sessionManager.disconnectSocket(client)
      })
-});
+}
 
 app.post('/newProject/:scratchId/:owner',(req,res)=>{
      if(!authenticate(req.params.owner,req.headers.authorization)) {res.send({noauth:true}); return;}
@@ -288,10 +301,10 @@ app.post('/newProject/:scratchId/:owner',(req,res)=>{
      res.send({id:project.id})
 })
 
-app.get('/blId/:scratchId',(req,res)=>{
-     // res.send(sessionManager.scratchprojects[req.params.scratchId]?.blId)
-     res.send(sessionManager.getScratchProjectEntry(req.params.scratchId)?.blId)
-})
+// app.get('/blId/:scratchId',(req,res)=>{
+//      // res.send(sessionManager.scratchprojects[req.params.scratchId]?.blId)
+//      res.send(sessionManager.getScratchProjectEntry(req.params.scratchId)?.blId)
+// })
 app.get('/blId/:scratchId/:uname',(req,res)=>{
      // let blId = sessionManager.scratchprojects[req.params.scratchId]?.blId
      let blId = sessionManager.getScratchProjectEntry(req.params.scratchId)?.blId
@@ -302,10 +315,10 @@ app.get('/blId/:scratchId/:uname',(req,res)=>{
           res.send(null); 
           return;
      }
-     // let hasAccess = fullAuthenticate(req.params.uname,req.headers.authorization,blId)
-     let hasAccess = project.isSharedWithCaseless(req.params.uname)
+     let hasAccess = fullAuthenticate(req.params.uname,req.headers.authorization,blId)
+     // let hasAccess = project.isSharedWithCaseless(req.params.uname)
 
-     res.send(hasAccess  ? blId : null);
+     res.send(hasAccess ? blId : null);
 })
 app.get('/scratchIdInfo/:scratchId',(req,res)=>{
      if (sessionManager.doesScratchProjectEntryExist(req.params.scratchId)) {
@@ -339,7 +352,7 @@ app.post('/projectSavedJSON/:blId/:version',(req,res)=>{
      if(!fullAuthenticate(req.headers.uname,req.headers.authorization,req.params.blId)) {res.send({noauth:true}); return;}
 
      let json = req.body;
-     console.log('saving project, blId: ',req.params.blId, ' version: ',req.params.version, 'json is null?: ' + !json)
+     // console.log('saving project, blId: ',req.params.blId, ' version: ',req.params.version, 'json is null?: ' + !json)
      let project = sessionManager.getProject(req.params.blId)
      if(!project) {console.log('could not find project!!!');
           res.send('not as awesome awesome :)')
@@ -464,10 +477,8 @@ app.get('/userRedirect/:scratchId/:username',(req,res)=>{
           let ownedProject = project.getOwnersProject(req.params.username)
           if(!!ownedProject) {
                res.send({goto:ownedProject.scratchId})
-          } else if(project.isSharedWith(req.params.username) || req.params.username=='ilhp10' || req.params.username=='rgantzos') {
-               res.send({goto:'new', blId:project.id})
           } else {
-               res.send({goto:'none',notshared:true})
+               res.send({goto:'new', blId:project.id})
           }
      }
 })
@@ -559,7 +570,7 @@ app.put('/leaveBlId/:blId/:username',(req,res)=>{
      res.send('uncool beans!!!! /|/|/|')
 })
 app.get('/verify/test',(req,res)=>{
-     res.send({verified:authenticate(req.query.username,req.headers.authorization),bypass:bypassAuth})
+     res.send({verified:authenticate(req.query.username,req.headers.authorization),bypass:bypassUserAuth})
 })
 
 
@@ -596,28 +607,36 @@ app.put('/unshare/:id/:to/',(req,res)=>{
      res.send('uncool beans!!!! /|/|/|')
 })
 app.get('/verify/bypass',(req,res)=>{
-     res.send(bypassAuth)
+     res.send(bypassUserAuth)
 })
 
 export let numWithCreds = 0
 export let numWithoutCreds = 0
-function fullAuthenticate(username,token,blId) {
+//bypassBypass means to bypass the bypass even if the bypass is enabled
+function fullAuthenticate(username,token,blId,bypassBypass) {
      if(token) {numWithCreds++}
      else {numWithoutCreds++}
-     if(bypassAuth) {return true} // remove once the new version has passed
      // and remove line 448 "sessionManager.canUserAccessProject"
      if(!username) { console.error(`undefined username attempted to authenticate on project ${blId} with token ${token}`); username = '*'}
-     let userAuth = authenticate(username,token)
-     let authAns = userAuth && sessionManager.canUserAccessProject(username,blId);
-     if(!authAns && userAuth) {
+     let userAuth = authenticate(username,token,bypassBypass)
+     let isUserBypass = (bypassUserAuth && !bypassBypass);
+     let authAns = ((userAuth || isUserBypass)) && (sessionManager.canUserAccessProject(username,blId) ||
+          admin.includes(username));
+     if(!authAns && (userAuth || isUserBypass)) {
           console.error(`🟪☔️ Project Authentication failed for user: ${username}, bltoken: ${token}, blId: ${blId}`)
      }
      return authAns
 }
 
-const port = 4000
-server.listen(port,'0.0.0.0');
-console.log('listening on port ' + port)
+const httpPort = 4001
+const httpsPort = 4000
+httpServer.listen(httpPort,'0.0.0.0');
+console.log('listening http on port ' + httpPort)
+if(httpsServer) {
+     httpsServer.listen(httpsPort,'0.0.0.0'); 
+     console.log('listening https on port ' + httpsPort)
+}
+
 
 // initial handshake:
 // client says hi, sends username & creds, sends project id 

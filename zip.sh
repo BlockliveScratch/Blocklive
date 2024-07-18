@@ -1,1 +1,1 @@
-zip -r extension.zip extension
+zip -FSr extension.zip extension

@@ -36,7 +36,7 @@ export function saveMapToFolder(obj, dir) {
           return
      }
          try{
-               console.log(`writing ${entry[0]}`)
+               // console.log(`writing ${entry[0]}`)
                fs.writeFileSync(dir+path.sep+entry[0],stringg)
          } catch (e) {
               console.error('Error when saving filename: ' + entry[0])

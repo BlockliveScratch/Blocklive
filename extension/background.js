@@ -2,14 +2,16 @@
 let uname = "*";
 let upk = undefined;
 
-let apiUrl = 'https://spore.us.to:4000';
+let apiUrl = 'https://blocklivecollab.com/api';
+// let apiUrl = 'https://spore.us.to/api';
+// let apiUrl = 'https://spore.us.to:4000';
 // let apiUrl = 'http://localhost:4000';
 
 chrome.runtime.onInstalled.addListener((details)=>{
   if(details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
     chrome.tabs.create({url:'https://sites.google.com/catlin.edu/blocklive-quickstart-guide/home#h.lebe3qxxu5ou'})
   } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
-    chrome.tabs.create({url:'https://sites.google.com/view/blocklive/new-blocklive-version'})
+    // chrome.tabs.create({url:'https://sites.google.com/view/blocklive/new-blocklive-version'})
     // chrome.tabs.create({url:'https://sites.google.com/catlin.edu/blocklive-quickstart-guide/new-blocklive-version'})
   }
 })
@@ -109,7 +111,11 @@ function playChange(blId,msg,optPort) {
 
 //////// INIT SOCKET CONNECTION ///////
 // ['websocket', 'xhr-polling', 'polling', 'htmlfile', 'flashsocket']
-const socket = io.connect(apiUrl,{jsonp:false,transports:['websocket', 'xhr-polling', 'polling', 'htmlfile', 'flashsocket']})
+const URLApiUrl = new URL(apiUrl);
+const URLApiDomain = URLApiUrl.origin
+const URLApiPath = [''].concat(URLApiUrl.pathname.split('/').filter(Boolean)).join('/')
+const socket = io.connect(URLApiDomain,{path: `${URLApiPath}/socket.io/`,jsonp:false,transports:['websocket', 'xhr-polling', 'polling', 'htmlfile', 'flashsocket']})
+BLOCKLIVE.socket = socket
 // const socket = io.connect(apiUrl,{jsonp:false,transports:['websocket']})
 // socket.on("connect_error", () => { socket.io.opts.transports = ["websocket"];});
 console.log('connecting')
@@ -322,6 +328,7 @@ chrome.runtime.onConnectExternal.addListener(function(port) {
 
   });
   port.onDisconnect.addListener((p)=>{
+    console.log('port disconnected',p)
     ports.splice(ports.indexOf(p),1);
     let blockliveId = portIds[p.name]
     let list = blockliveTabs[blockliveId]

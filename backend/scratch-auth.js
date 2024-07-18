@@ -1,5 +1,5 @@
 
-import { bypassAuth } from "./index.js";
+import { bypassUserAuth } from "./index.js";
 import { authProjects } from "./secrets/secrets.js";
 import fs from 'fs'
 export const freePassesPath = 'storage/freePasses.json'
@@ -34,7 +34,7 @@ function sleep(millis) {
 
 let idIndex = 0;
 export function getAuthStats() {
-    return { idIndex, info: getAuthProjectId(), failed: failedAuthLog, successCount:Object.keys(secondTimeSuccessAuthLog).length }
+    return { idIndex, info: getAuthProjectId(), failed: Object.keys(failedAuthLog).length, secondTimeSuccessCount:Object.keys(secondTimeSuccessAuthLog).length }
 }
 
 function generateAuthCode() {
@@ -57,7 +57,8 @@ export function setPaths(app, userManagerr, sessionManagerr) {
     userManager = userManagerr
     sessionManager = sessionManagerr
     app.get('/verify/start', (req, res) => { // ?code=000000
-        console.log('starting to authenticate a user')
+        let debugUname = req.headers.uname
+        console.log(`starting to authenticate user ${debugUname}`)
 
         let clientCode = req.query.code;
         let verifyCode = generateAuthCode();
@@ -83,7 +84,7 @@ export function setPaths(app, userManagerr, sessionManagerr) {
 
             let cloud = await getVerificationCloud(tempCode)
             if (!cloud || cloud?.err) {
-                console.log("retrying...");
+                console.log(`retrying... ${req.headers.uname}`);
                 await sleep(CLOUD_WAIT)
                 cloud = await getVerificationCloud()
             }
@@ -214,8 +215,8 @@ export function deleteFreePass(username) {
 }
 
 
-export function authenticate(username, token) {
-    if (bypassAuth) { return true }
+export function authenticate(username, token, bypassBypass) {
+    if (bypassUserAuth && !bypassBypass) { return true }
     if(!username) { console.error(`undefined username attempted to authenticate with token ${token}`); return '*'}
     let success = hasFreePass(username) || userManager.getUser(username).token == token
     if (success) {

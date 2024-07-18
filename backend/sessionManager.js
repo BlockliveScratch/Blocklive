@@ -285,6 +285,7 @@ class ProjectWrapper {
             "msg": {
                 "sender": from,
                 "text": message,
+                "linkify": true,
             }
         }
         this.session.sendChangeFrom(null, msg, true)
@@ -433,7 +434,7 @@ export default class SessionManager {
     }
     offloadProject(id) {
         try {
-            console.log('offloading project ' + id)
+            // console.log('offloading project ' + id)
             this.blocklive[id]?.trimChanges()
             let toSaveBlocklive = {}
             toSaveBlocklive[id] = this.blocklive[id]
@@ -445,7 +446,7 @@ export default class SessionManager {
     }
     async offloadProjectAsync(id) {
         try {
-            console.log('offloading project ' + id)
+            // console.log('offloading project ' + id)
             let toSaveBlocklive = {}
             toSaveBlocklive[id] = this.blocklive[id]
             if (toSaveBlocklive[id]) { // only save it if there is actual data to save
@@ -710,14 +711,20 @@ export default class SessionManager {
     getStats() {
         let set1 = new Set();
         let set2 = new Set();
+        let aloneSet = new Set();
+        let sharedSet = new Set();
+        let collabingSet = new Set();
         let stats = {
+            active1HrCollabing:0,
             active2HrCollabing:0,
             active24HrCollabing:0,
             active1weekCollabing:0,
             active30dCollabing:0,
+            active1HrRealtime:0,
             active24HrRealtime:0,
             active1weekRealtime:0,
             active30dRealtime:0,
+            active1Hr:0,
             active24Hr:0,
             active1week:0,
             active30d:0,
@@ -730,6 +737,11 @@ export default class SessionManager {
             totalProjectsMoreThan1Editor: 0,
             usersActiveCount: 0,
             usersActiveMoreThan1EditorCount: 0,
+            monthlyProjects:0,
+            monthlyScratchIds:0,
+            collabingNow:0,
+            sharedNow:0,
+            aloneNow:0,
             usersActive: [],
             usersActiveMoreThan1Editor: [],
             projectsActiveSingleEditor:[],
@@ -747,6 +759,8 @@ export default class SessionManager {
             try {
                 if(connectedUsernames.length==1) {
                     stats.projectsActiveSingleEditor.push(project.scratchId)
+                    if(project.sharedWith?.length==0) {connectedUsernames.forEach(aloneSet.add, aloneSet)}
+                    if(project.sharedWith?.length>0) {connectedUsernames.forEach(sharedSet.add, sharedSet)}
                 }
                 if (connectedUsernames.length > 0) {
                     stats.totalActiveProjects++;
@@ -754,7 +768,7 @@ export default class SessionManager {
                 }
                 if (connectedUsernames.length > 1) {
                     stats.totalProjectsMoreThan1Editor++;
-                    connectedUsernames.forEach(set2.add, set2)
+                    connectedUsernames.forEach(collabingSet.add, collabingSet)
                     stats.usersActiveMoreThan1Editor.push(connectedUsernames)
                     stats.projectsActiveMoreThan1Editor.push(project.scratchId)
                 }
@@ -765,17 +779,30 @@ export default class SessionManager {
             } catch (e) { console.error(e) }
         })
         stats.usersActive = Array.from(set1);
-        let oldUsersActiveMoreThan1Editor = Array.from(set2);
+        let oldUsersActiveMoreThan1Editor = Array.from(collabingSet);
         stats.usersActiveCount = stats.usersActive.length
         stats.usersActiveMoreThan1EditorCount = oldUsersActiveMoreThan1Editor.length
 
+        collabingSet.forEach(aloneSet.delete,aloneSet)
+        collabingSet.forEach(sharedSet.delete,sharedSet)
+        sharedSet.forEach(aloneSet.delete,aloneSet)
+
+        stats.collabingNow = collabingSet.size;
+        stats.sharedNow = sharedSet.size;
+        stats.aloneNow = aloneSet.size;
+
+        stats.active1HrCollabing = countRecentShared(1/24);
         stats.active2HrCollabing = countRecentShared(1/24*2);
         stats.active24HrCollabing = countRecentShared(1);
         stats.active1weekCollabing = countRecentShared(7);
         stats.active30dCollabing = countRecentShared(30);
         stats.active24HrRealtime = countRecentRealtime(1);
+        stats.active2HrRealtime = countRecentRealtime(1/24*2);
         stats.active1weekRealtime = countRecentRealtime(7);
         stats.active30dRealtime = countRecentRealtime(30);
+        stats.active1Hr = countRecent(1/24);
+        stats.active1HrRealtime = countRecentRealtime(1/24);
+        stats.active2Hr = countRecent(1/24*2);
         stats.active24Hr = countRecent(1);
         stats.active1week = countRecent(7);
         stats.active30d = countRecent(30);
@@ -783,7 +810,9 @@ export default class SessionManager {
         stats.popup1week = countPopup(7);
         stats.popup1month = countPopup(30);
         stats.popupUnique24hr = countUniquePopup(1)
-        stats.popupUnique1week = countUniquePopup(7)
+        stats.popupUnique1week = countUniquePopup(7);
+        stats.monthlyProjects = fs.readdirSync(blocklivePath).length
+        stats.monthlyScratchIds = fs.readdirSync(scratchprojectsPath).length
 
         stats.auth = getAuthStats();
         stats.auth.numWithCreds = numWithCreds;

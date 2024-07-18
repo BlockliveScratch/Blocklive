@@ -3538,6 +3538,14 @@ async function addMessage(msg, notif) {
     }
     let msgElem = document.createElement('bl-msg')
     msgElem.innerText = msg.text 
+
+    if(msg.linkify) {
+        var newHTML = msgElem.innerHTML.replace(/(<a href=")?((https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)))(">(.*)<\/a>)?/gi, function () {
+            return '<a target="_blank" href="' + arguments[2] + '">' + (arguments[7] || arguments[2]) + '</a>'
+        });
+        msgElem.innerHTML=newHTML
+    }
+
     if(msg.sender == uname) {msgElem.classList.add('mymsg')}
     msgsElem.appendChild(msgElem)
 

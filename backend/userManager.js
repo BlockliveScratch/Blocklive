@@ -71,7 +71,7 @@ export default class UserManager {
         username=username.toLowerCase()
 
         if(!(username in this.users)) {
-            console.log(`reloading user ${username}`)
+            // console.log(`reloading user ${username}`)
 
             let usernameFile=sanitize(username+'');
             if(!usernameFile) {return;} // dont do anything if username doesnt exist
@@ -88,7 +88,7 @@ export default class UserManager {
         }
     }
     offloadUser(username) {
-        console.log(`offloading user ${username}`)
+        // console.log(`offloading user ${username}`)
         if(!username?.toLowerCase) {console.error(`username is not string ${username}`); console.trace(); return} // username is not a string
         username=username.toLowerCase()
         if(!(username in this.users)) {return;}

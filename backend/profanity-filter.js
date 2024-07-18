@@ -131,6 +131,7 @@ export const StringTreeNode = class {
         this.containsString = (string, i) => {
             if (this.isEnd) { return true }
             let next = this[string[i]]
+            // console.log(string[i])
             if (next == null) { return false }
             if (next.isEnd) { return true }
             return this[string[i]].containsString(string, i + 1)
@@ -199,18 +200,17 @@ export class Filter {
         let c = this
         c.addMapping(['o', '0', 'O'], 'o')
         c.addMapping([' ', '-', '_', '*', '+', '^', '.'], '')
-        c.addMapping(['z'], 's')
-        c.addMapping(['q'], 'p')
-        c.addMapping(['q'], 'p')
+        // c.addMapping(['z'], 's')
+        // c.addMapping(['q'], 'p')
         c.addMapping(['ck'], 'c')
         c.addMapping(['k'], 'c')
         c.addMapping(['$'], 's')
-        c.addMapping(['3'], 'e')
-        c.addMapping(['5'], 's')
+        // c.addMapping(['3'], 'e')
+        // c.addMapping(['5'], 's')
         c.addMapping(['ch'], 'x')
         c.addMapping(['1', 'l'], 'i')
-        // c.addMapping(['e'],'i')
-        c.addMapping(['cc'], 'ch')
+        c.addMapping(['e'],'i') // experimental mapping
+        // c.addMapping(['cc'], 'ch')
 
         this.compressor.setAllChars('abcdefghijklmnopqrstuvwxyz123456789 ')
 
@@ -225,6 +225,16 @@ export class Filter {
             this.tester.addWord(line.toString('ascii'));
         }
 
+        lines = new Lines('./filterwords/bademojis.txt')
+        while (line = lines.next()) {
+            this.tester.addWord(line.toString());
+        }
+
+        lines = new Lines('./secrets/baddomains.txt')
+        while (line = lines.next()) {
+            this.tester.addWord(line.toString('ascii'));
+        }
+
         lines = new Lines('./filterwords/okWords.txt')
         while (line = lines.next()) {
             this.compressor.addRemove(line.toString('ascii').toLowerCase());
@@ -235,7 +245,7 @@ export class Filter {
             this.addSpaceWord(line.toString('ascii'))
         }
 
-        lines = new Lines('./filterwords/okWordsSpace.txt')
+        lines = new Lines('./filterwords/processedOkSpaceWords.txt')
         while (line = lines.next()) {
             this.compressor.addOkWord(line.toString('ascii'))
         }
@@ -251,7 +261,11 @@ export class Filter {
     }
 
     isVulgar(string) {
-        string = this.compressor.removeOkWords(string)
+        // string = this.compressor.removeOkWords(string)
         return this.tester.containsWord(this.compressor.compress(string.toLowerCase())) || this.tester.containsWord(this.compressor.shear(string.toLowerCase() + " ")) || this.hasSpaceWord(string.toLowerCase())
     }
+    getCensored(string) {
+        return string.split(' ').map(word=>(word.toLowerCase() in this.compressor.okWords) ? word : '*'.repeat(word.length)).join(' ')
+    }
 }
+
