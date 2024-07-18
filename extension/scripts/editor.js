@@ -147,7 +147,7 @@ async function startBlocklive(creatingNew) {
         })
     }
     if(creatingNew) {
-        addToCredits('Get BIocklive for Live Collabs #bl')
+        addToCredits('Get Blocklive for Live Collabs #bl')
     }
 }
 
@@ -214,6 +214,8 @@ async function joinExistingBlocklive(id) {
     liveMessage({meta:"joinSession"}) // join sessionManager session
     readyToRecieveChanges = true
     pauseEventHandling = false;
+
+    reloadOnlineUsers();
     // hackyRefreshFlyoutVariables()
 
     setTimeout(BL_UTILS.refreshFlyout,100) // todo figure way other than timeout
@@ -2780,7 +2782,7 @@ let blActivateClick = async ()=>{
         await refreshShareModal()
 
         // add blocklive ref in instructions credits
-        addToCredits('Get BIocklive for Live Collabs #bl')
+        addToCredits('Get Blocklive for Live Collabs #bl')
 
         // stop spinny
         document.querySelector('loader.blockliveloader').style.display = 'none'

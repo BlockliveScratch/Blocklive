@@ -400,21 +400,28 @@ chrome.runtime.sendMessage(exId, { meta: 'getUsernamePlus' }, async (userData) =
     })
 
 
-
+    let shouldShowBanner = true;
+    async function updateShouldHideBanner() {
+      const res = await fetch('https://spore.us.to/api/verify/bypass');
+      const bypass = (await res.text()) === 'true';
+      shouldShowBanner = !bypass;
+    }
+    updateShouldHideBanner();
 
     chrome.runtime.sendMessage(exId, { meta: 'verifying' }, (verifying) => {
       console.log('vf',verifying)
       console.log('verifying',verifying)
-      if (verifying=='nocon'){
+      if (verifying=='nocon' && shouldShowBanner) {
         // defaultAddHideBlockliveButton()
         document.querySelector('.box-head').insertAdjacentHTML('afterend', `<div class="blBanner" id="unverified" style="background:red; color:white;">⚠️ Cant connect to blocklive servers at blocklivecollab.com <a href="https://status.uptime-monitor.io/6499c89d4bfb79bb5f20ac4d" target="_blank">Check Uptime</a> or <a onclick="(()=>{chrome.runtime.sendMessage(exId,{meta:'dontShowVerifyError',val:false}); addHideBlockliveButton(false);})()">Dont show this message again</a><div>`)
       }
-      else if (verifying) {
+      else if (verifying && shouldShowBanner) {
         defaultAddHideBlockliveButton()
         document.querySelector('#verifying')?.remove()
         document.querySelector('.box-head').insertAdjacentHTML('afterend', `<div class="blBanner" id="verifying" style="background:#ea47ff; color:white;"><img height=15 src="https://upload.wikimedia.org/wikipedia/commons/a/ad/YouTube_loading_symbol_3_%28transparent%29.gif"/> Blocklive is verifying your account ...<div>`)
       } else {
         if (newVerified) { return }
+        if (!shouldShowBanner) { return }
         defaultAddHideBlockliveButton()
         document.querySelector('.box-head').insertAdjacentHTML('afterend', `<div class="blBanner" id="unverified" style="background:red; color:white;">⚠️ Blocklive could not verify your account. Reload the tab in a few seconds. If this issue continues, contact @ilhp10 or @rgantzos<div>`)
       }
