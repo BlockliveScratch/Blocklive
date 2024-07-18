@@ -70,6 +70,9 @@ export function setPaths(app, userManagerr, sessionManagerr) {
 
     const CLOUD_WAIT = 1000 * 5;
     app.get('/verify/userToken', async (req, res) => { // ?code=000000&method=cloud|CLOUDs
+        if (bypassUserAuth) {
+            return res.send({ freepass: true })
+        }
         try {
             let clientCode = req.query.code
             if (!clientCode) { res.send({ err: 'no client code included' }); return }
