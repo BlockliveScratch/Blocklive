@@ -10,7 +10,10 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
     "nuxt": "^3.14.1592",
+    "stripe": "^17.4.0",
     "vue": "latest",
     "vue-router": "latest"
   },
