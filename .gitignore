@@ -6,3 +6,4 @@ backend/storage
 *secrets*
 !secrets.zip
 /debug/
+.env
