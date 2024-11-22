@@ -1,0 +1,24 @@
+.bar {
+    display: flex;
+    gap:10px;
+    flex-direction: row;
+    align-items: center;
+
+    font-family: product-sans;
+    color:white;
+    font-weight: bold;
+    font-size: 40px;
+
+   position: static;
+   left:0;
+   right:0;
+   top:0;
+   
+   padding:10px;
+   background-color: rgb(255, 0, 170);
+   height:35px;
+}
+
+.littleblock {
+    // rotate: -1deg;
+}

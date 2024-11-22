@@ -1,0 +1,25 @@
+.option {
+    padding: 30px;
+    display: flex;
+    flex-flow: column nowrap;
+    gap:5px;
+    border-radius: 40px;
+    border: solid gray 2px;
+    background-color: rgb(218, 218, 218);
+}
+.price {
+    font-size: 50px;
+    font-weight: bold;
+}
+.optionName {
+    font-size: 25px;
+}
+.optionPerks {
+    display: flex;
+    flex-flow: column;
+    gap:5px;
+}
+
+.moreoptions {
+    
+}

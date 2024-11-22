@@ -1,0 +1,23 @@
+mybody {
+    display: flex;
+    flex-flow: column;
+    gap:0px;
+    align-items: center;
+    justify-content: center;
+
+
+}
+
+.content{
+    display: flex;
+    flex-flow: column;
+    gap:5px;
+    align-items: center;
+    justify-content: center;
+}
+
+.options {
+    display: flex;
+    flex-flow: row wrap;
+    gap:15px;
+}
