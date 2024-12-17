@@ -49,7 +49,8 @@ app.get("/checkout-session", async (req, res) => {
 
 app.post("/create-checkout-session", async (req, res) => {
   const domainURL = process.env.DOMAIN;
-  const { priceId } = req.body;
+  const siteDomainURL = process.env.SITE_DOMAIN;
+  const { priceId } = {...req.query, ...req.body};
 
   // Create new Checkout Session for the order
   // Other optional params include:
@@ -68,8 +69,10 @@ app.post("/create-checkout-session", async (req, res) => {
         },
       ],
       // ?session_id={CHECKOUT_SESSION_ID} means the redirect will have the session ID set as a query param
-      success_url: `${domainURL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${domainURL}/canceled.html`,
+      success_url: `${siteDomainURL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${siteDomainURL}/purchase`,
+      // success_url: `${domainURL}/success.html?session_id={CHECKOUT_SESSION_ID}`,
+      // cancel_url: `${domainURL}/canceled.html`,
       // automatic_tax: { enabled: true }
     });
 

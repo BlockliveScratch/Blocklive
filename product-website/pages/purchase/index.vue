@@ -26,8 +26,8 @@ import options from './options.vue';
             </div> -->
             </div>
         </div>
-        <a href="/request" class="schools">Schools click here</a>
-        <a href="/request" class="parents">My parents cant pay</a>
+        <!-- <a href="/request" class="schools">Schools click here</a> -->
+        <a href="/request" class="parents">Me or my parents cant pay</a>
     </div>
 </template>
 

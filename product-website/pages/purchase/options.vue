@@ -4,7 +4,8 @@
 <template>
 
      
-<form :action="`https://jeffa.uk.to:4242/create-checkout-session?priceId=${'price_1QNpSe02JNKBBhrZzwzr8L9u'}`" method="POST" id="form">
+<!-- <form :action="`http://localhost:4242/create-checkout-session`" method="POST" id="form"> -->
+<form :action="`http://localhost:4242/create-checkout-session?priceId=${'price_1QNpSe02JNKBBhrZzwzr8L9u'}`" method="POST" id="form">
     <div class="option" onclick="document.getElementById('form').submit()">
         <span class="optionName">{{ name }}</span>
         <div class="optionPerks">
