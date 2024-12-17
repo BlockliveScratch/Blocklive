@@ -1,3 +1,19 @@
+#img{
+    z-index: -100000;
+    position: fixed;
+    top:0;
+    bottom:0;
+    left:0;
+    right:0;
+
+    height:100vh;
+    width:max(100vw, 100vw)
+}
+#img img {
+    height:100vh;
+    width:max(100vw, 100vw);
+}
+
 mybody {
     display: flex;
     flex-flow: column;
@@ -7,7 +23,12 @@ mybody {
 
 
 }
-
+.getTitle{
+    font-size:36px;
+}
+.getSubTitle{
+    font-size:20px;
+}
 .content{
     display: flex;
     flex-flow: column;
@@ -15,7 +36,9 @@ mybody {
     align-items: center;
     justify-content: center;
 }
+.schools{
 
+}
 .options {
     display: flex;
     flex-flow: row wrap;

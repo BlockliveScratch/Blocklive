@@ -1,11 +1,48 @@
+.bigbubble, .options {
+    gap:10px;
+
+}
+.getTit2 {
+    font-size: 12.5px;
+    
+}
+
+.bigbubble {
+    
+    padding:10px;
+
+    background-color:rgb(226, 226, 226);
+    border-radius: 30px;
+    outline:solid rgb(192, 192, 192) 1px;
+    /* box-shadow: rgb(192, 192, 192) 0px 10px 30px 4px; */
+
+    display: flex;
+    flex-flow: column;
+}
+.options{
+    display:flex;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+}
+.bigbubble > span{
+    text-align: center;
+}
 .option {
-    padding: 30px;
+    padding: 20px;
     display: flex;
     flex-flow: column nowrap;
-    gap:5px;
+    /* gap:5px; */
     border-radius: 40px;
-    border: solid gray 2px;
+    border: solid rgb(201, 201, 201) 2px;
     background-color: rgb(218, 218, 218);
+    cursor: pointer;
+
+    transition:0.3s;
+    
+}
+.option:hover{
+    background-color: rgb(228, 228, 228);
 }
 .price {
     font-size: 50px;
@@ -22,4 +59,11 @@
 
 .moreoptions {
     
+}
+
+#img {
+    margin-bottom: 10px;
+}
+.break{
+    height:20px;
 }

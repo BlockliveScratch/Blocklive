@@ -60,6 +60,7 @@ import { installCleaningJob } from './removeOldProjects.js';
 import { addRecent, countRecentShared, recordPopup, saveRecent } from './recentUsers.js';
 import { admin, adminUser } from './secrets/secrets.js';
 import {setPaths, authenticate, freePassesPath, freePasses} from './scratch-auth.js';
+import { PassAuthenticator } from './paid.js';
 
 
 const restartMessage = 'The Blocklive server is restarting. You will lose connection for a few seconds.'
@@ -156,14 +157,23 @@ setTimeout(()=>installCleaningJob(sessionManager,userManager),1000 * 10)
 const filter = new Filter()
 filter.loadDefault()
 
+let passAuthenticator = new PassAuthenticator();
 let messageHandlers = {
      'joinSession':(data,client)=>{
           if(!fullAuthenticate(data.username,data.token,data.id)) {client.send({noauth:true}); return;}
+          if(!passAuthenticator.verifyPass(data.username)) {
+               client.send({nopass:true})
+               return;
+          }
 
           sessionManager.join(client,data.id,data.username)
           if(data.pk) { userManager.getUser(data.username).pk = data.pk }
      },'joinSessions':(data,client)=>{
           if(!fullAuthenticate(data.username,data.token,data.id)) {client.send({noauth:true}); return;}
+          if(!passAuthenticator.verifyPass(data.username)) {
+               client.send({nopass:true})
+               return;
+          }
 
           data.ids.forEach(id=>{sessionManager.join(client,id,data.username)})
           if(data.pk) { userManager.getUser(data.username).pk = data.pk }
