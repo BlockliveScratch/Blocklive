@@ -28,10 +28,10 @@ const getApiUrl = async () => {
 
     if (customServer) {
         const serverUrl = await getStorageValue('server-url');
-        return serverUrl || 'https://livescratchapi.waakul.com';
+        return serverUrl || 'https://blserver.waakul.com';
     }
 
-    return 'https://livescratchapi.waakul.com';
+    return 'https://blserver.waakul.com';
 };
 
 let apiUrl;
