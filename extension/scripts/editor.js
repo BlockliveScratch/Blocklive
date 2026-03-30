@@ -6,7 +6,7 @@ chrome.runtime.sendMessage(exId, { meta: 'getAPI-URL' }, function (response) {
     apiUrl = response.apiURL;
 });
 
-chrome.runtime.sendMessage(exId, { meta: 'getUsernamePlus' }, (userData) => { apiUrl = userData.apiUrl; uname = userData.uname;});
+chrome.runtime.sendMessage(exId, { meta: 'getUsernamePlus' }, (userData) => { apiUrl = userData.apiUrl; });
 
 //////////// TRAP UTILS ///////////
 
@@ -160,9 +160,19 @@ async function onTabLoad() {
     waitFor(() => (!isNaN(parseFloat(location.pathname.split('/')[2])))).then(() => { scratchId = location.pathname.split('/')[2]; });
 
     // trap vm and store
-    let reactInst = Object.values(await getObj('div[class^="stage-wrapper_stage-wrapper_"]')).find((x) => x.child);
-    vm = reactInst.child.child.child.stateNode.props.vm;
-    store = reactInst.child.child.child.stateNode.context.store;
+    let reactElem = await getObj('div[class^="stage-header_stage-menu-wrapper_"]');
+    let reactKey = Object.keys(reactElem).find(k => k.startsWith('__reactFiber'));
+    let reactInst = reactElem[reactKey];
+    let reactLoopInst = reactInst;
+    while (reactLoopInst && (!reactLoopInst.memoizedProps || !reactLoopInst.memoizedProps.vm)) {
+        reactLoopInst = reactLoopInst.child;
+    }
+    vm = reactLoopInst.memoizedProps.vm;
+    reactLoopInst = reactInst;
+    while (reactLoopInst && (!reactLoopInst.dependencies || !reactLoopInst.dependencies.firstContext.memoizedValue.store)) {
+        reactLoopInst = reactLoopInst.child;
+    }
+    store = reactLoopInst.dependencies.firstContext.memoizedValue.store;
     addButtonInjectors();
     blId = isNaN(parseFloat(location.pathname.split('/')[2])) ? '' : await getBlocklyId(scratchId); //todo: should this use the result of the getBlId function, or a more specific endpoint to authenticating project joining?
     if (!blId) {
@@ -235,10 +245,11 @@ function removeLivescratchButtons() {
 
         // document.querySelector("#app > div > div.gui_menu-bar-position_3U1T0.menu-bar_menu-bar_JcuHF.box_box_2jjDp > div.menu-bar_main-menu_3wjWH > livescratchcontainer")?.remove()
         document.querySelector('#blRevert')?.remove();
+        document.querySelector('#noRefreshPanel')?.remove();
         document.querySelector('#blUsersPanel')?.remove();
         document.querySelector('#ls-chat')?.remove();
-        document.querySelector('#lsChatButton')?.remove();
 
+        blDropdown.style.display = 'none';
         livescratchButton.onclick = blActivateClick;
         blId = null;
 
@@ -269,8 +280,9 @@ function setTopbarButtonVisibility() {
         else { document.getElementById('blUsersPanel').style.visibility = 'visible'; }
     } catch (e) { console.error(e); }
     try {
-        if (!blId) { document.getElementById('lsChatButton').style.visibility = 'hidden'; }
-        else { document.getElementById('lsChatButton').style.visibility = 'visible'; }
+        let chatElem = document.getElementById('blChatButton');
+        if (!blId) { chatElem.style.visibility = 'hidden'; chatElem.style.display = 'none'; }
+        else { chatElem.style.visibility = 'visible'; chatElem.style.display = 'flex'; }
     } catch (e) { console.error(e); }
 }
 
@@ -406,26 +418,16 @@ async function activateLivescratch() {
     }
     vm.downloadProjectIdPromise = downloadProjectIdPromise.bind(vm);
 
-    // Trap ScratchBlocks -- adapted from https://github.com/ScratchAddons/ScratchAddons/blob/4248dc327a9f3360c77b94a89e396903218a2fc2/addon-api/content-script/Trap.js
-
-    // let reactElem = (await getObj(()=>document.querySelector('[class^="gui_blocks-wrapper"]')))
+    // Trap ScratchBlocks - rewrote for react 18 by waakul
 
     listenForObj('[class^="gui_blocks-wrapper"]', (reactElem) => {
-
-        // let reactElem = (await getObj('[class^="gui_blocks-wrapper"]'))
-        let reactInst;
-        for (let e of Object.entries(reactElem)) {
-            if (e[0].startsWith('__reactInternalInstance')) {
-                reactInst = e[1];
-                break;
-            }
+        let reactKey = Object.keys(reactElem).find(k => k.startsWith('__reactFiber'));
+        let reactInst = reactElem[reactKey];
+        let reactLoopInst = reactInst;
+        while (reactLoopInst && (!reactLoopInst.stateNode || !reactLoopInst.stateNode.ScratchBlocks)) {
+            reactLoopInst = reactLoopInst.child;
         }
-
-        let childable = reactInst;
-        /* eslint-disable no-empty */
-        while (((childable = childable.child), !childable || !childable.stateNode || !childable.stateNode.ScratchBlocks)) { }
-
-        ScratchBlocks = childable.stateNode.ScratchBlocks;
+        ScratchBlocks = reactLoopInst.stateNode.ScratchBlocks; //reactInst.child.child.child.child.child.child.child.stateNode.ScratchBlocks;
         getWorkspace().removeChangeListener(blockListener);
         getWorkspace().addChangeListener(blockListener);
     });
@@ -434,14 +436,13 @@ async function activateLivescratch() {
     function getPaper() {
         let paperContainer = document.querySelector('[class^=\'paint-editor_canvas-container\']');
         if (!paperContainer) return null;
-        let reactInst;
-        for (let e of Object.entries(paperContainer)) {
-            if (e[0].startsWith('__reactInternalInstance')) {
-                reactInst = e[1];
-                break;
-            }
+        let reactKey = Object.keys(paperContainer).find(k => k.startsWith('__reactFiber'));
+        let reactInst = paperContainer[reactKey];
+        let reactLoopInst = reactInst;
+        while (reactLoopInst && (!reactLoopInst.stateNode || !reactLoopInst.stateNode.canvas)) {
+            reactLoopInst = reactLoopInst.child;
         }
-        return reactInst?.child?.child?.child?.stateNode;
+        return reactLoopInst.stateNode;
     }
 
     ///.......... ALL THE HACKY THINGS ..........//
@@ -2181,7 +2182,7 @@ function outlineBlock(blockId, username) {
     let blockElem = block.getSvgRoot();
 
     const blockResetDef = setBlockStyles(blockId, blockElem,
-        { 'outline': 'solid 8px #5fd2a5' }, username,
+        { 'outline': 'solid 8px var(--extension-main-color)' }, username,
     );
     BL_BlockOutlinesUsers[username] = blockResetDef;
     BL_BlockOutlinesBlocks[blockId] = blockResetDef;
@@ -2292,6 +2293,7 @@ blModalExample = document.querySelector('#blModalExample')
             result.parentNode.username = user.username
 
             resultt.style.visibility = 'visible'
+            resultt.style.display = 'flex'
             resultPic.style.backgroundImage = \`url('\${user.pic}')\`  
              } else {
                  resultt.style.visibility = 'hidden'
@@ -2311,14 +2313,6 @@ multiplyNode(document.querySelector('cell'), 2, true);
 }
 `;
 let shareCSS = `
-#lsShare {
-    transition: 0.3s ease;
-}
-
-#lsShare:hover {
-    transform: scale(1.05);
-    background: linear-gradient(-115deg, #4A9AFF -12.84%, #57B78A 122.07%) !important;
-}
 
 .sharedName:hover {
     text-decoration: underline;
@@ -2331,7 +2325,7 @@ let shareCSS = `
     background: rgba(255,255,255,0.2);
 }
 .livescratchloader {
-    border: 3px solid #5fd2a5;
+    border: 3px solid var(--extension-main-color);
     border-top: 3px solid white;
     border-bottom: 3px solid white;
     border-radius: 50%;
@@ -2582,7 +2576,7 @@ async function getUserInfo(username) {
 async function getWithPic(user, username = null) {
     if (username !== null && username === 'livescratch') {
         const url = await new Promise((resolve, reject) => {
-            chrome.runtime.sendMessage(exId, { meta: 'getUrl', for: '/img/LogoLiveScratch.svg' }, (url) => {
+            chrome.runtime.sendMessage(exId, { meta: 'getUrl', for: '/img/LogoBlocklive.svg' }, (url) => {
                 if (chrome.runtime.lastError) {
                     reject(chrome.runtime.lastError);
                 } else {
@@ -2596,6 +2590,30 @@ async function getWithPic(user, username = null) {
         user.pic = `https://uploads.scratch.mit.edu/get_image/user/${user.pk}_60x60.png`;
         return user;
     }
+}
+
+
+async function addCollaboratorGUI(user, omitX) {
+    if (user.username.toLowerCase() in shareDivs) { return; }
+    if (!user) { return; }
+
+    let newCollab = blModalExample.cloneNode(-1);
+    // console.log(newCollab)
+    newCollab.style.display = 'flex';
+    Array.from(newCollab.children).find(elem => elem.localName == 'name').innerText = user.username;
+    let x = Array.from(newCollab.children).find(elem => elem.localName == 'x');
+    if (omitX === true) {
+        x.remove();
+    } else {
+        x.username = user.username;
+    }
+    Array.from(newCollab.children).find(elem => elem.localName == 'pic').style.backgroundImage = `url('${user.pic}')`;
+    shareDivs[user.username.toLowerCase()] = newCollab;
+    blModalExample.parentNode.append(newCollab);
+
+    resultt.style.visibility = 'hidden';
+    earch.value = '';
+    earch.oninput();
 }
 
 async function removeCollaboratorGUI(username) {
@@ -2635,7 +2653,7 @@ function refreshShareModal() {
             removeAllCollaboratorsGUI();
             for (boi of res) { if (!boi.pk) { console.log('oi!', boi); boi.pk = (await getUserInfo(boi.username)).pk; }; console.log(boi); }
             res.forEach(getWithPic);
-            addCollaboratorGUI(res.shift());
+            addCollaboratorGUI(res.shift(), true);
             res.forEach(addCollaboratorGUI);
             promRes();
         });
@@ -2647,30 +2665,25 @@ function makeLivescratchButton(sharebutton) {
     let button = document.createElement('livescratch-init');
     button.id = 'lsShare';
     button.className = Array.from(sharebutton.classList).filter(e => e.includes('button_outlined-button') || e.includes('menu-bar_menu-bar-button')).join(' ');
-    button.style.marginRight = '10px';
-    button.style.paddingInline = '9px';
-    button.style.gap = '6px';
+    button.style.marginRight = '7px';
+    button.style.paddingLeft = '7px';
+    button.style.paddingRight = '7px';
+    button.style.gap = '7px';
+    button.style.background = 'var(--extension-main-color)'
     // button.style.background = ' linear-gradient(90deg, rgba(51,0,54,1) 0%, rgba(255,0,113,1) 60%)'
-    button.style.background = 'linear-gradient(115deg, #4A9AFF -12.84%, #57B78A 122.07%)'; // livescratch gradient
-    button.style.boxShadow = '0px 0px 0px 2px #ffffff3d inset';
-    button.style.color = '#fff';
-    button.style.borderRadius = '8px';
+    // button.style.background = '#5fd2a5'; // livescratch green
+    button.style.color = 'var(--extension-main-text-color)';
     button.style.display = 'flex';
     button.style.flexDirection = 'row';
 
-    let img = document.createElement('img');
-    img.style.height = '18px';
-    img.src = "data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20height%3D%2224px%22%20viewBox%3D%220%20-960%20960%20960%22%20width%3D%2224px%22%20fill%3D%22%23FFFFFF%22%3E%3Cpath%20d%3D%22M480.09-497.65q-81.18%200-137.29-56.39-56.1-56.4-56.1-137.2%200-80.8%2056.01-136.63%2056.02-55.83%20137.2-55.83%2081.18%200%20137.29%2055.77%2056.1%2055.76%2056.1%20136.97%200%2080.52-56.01%20136.92-56.02%2056.39-137.2%2056.39Zm-359.13%20406V-243.7q0-44.26%2022-79.85%2022.01-35.59%2058.47-54.32%2066-34%20136.06-51t142.31-17q73.33%200%20143.33%2017%2070%2017%20135.44%2050.43%2036.46%2018.65%2058.47%2054.09%2022%2035.43%2022%2080.62v152.08H120.96Z%22%2F%3E%3C%2Fsvg%3E";
-
     let text = document.createElement('text');
     text.style.textAlign = 'center';
-    text.innerHTML = `LS Share`;
+    text.innerHTML = 'Blocklive<br>Share';
 
     let loader = document.createElement('loader');
     loader.className = 'livescratchloader';
     loader.style.display = 'none';
     button.appendChild(loader);
-    button.appendChild(img);
     button.appendChild(text);
     return button;
 }
@@ -2812,7 +2825,7 @@ let blActivateClick = async () => {
 
 
 
-        // ACTIVATE LIVESCRATCH!!!
+        // ACTIVATE BLOKLIVE!!!
         projectReplaceInitiated = true;
         pauseEventHandling = false;
         liveMessage({ meta: 'myId', id: blId });
@@ -2820,6 +2833,7 @@ let blActivateClick = async () => {
         // JOIN LIVESCRATCH SESSION!!!!
         liveMessage({ meta: 'joinSession' });
         readyToRecieveChanges = true;
+        await refreshShareModal();
 
         // add livescratch ref in instructions credits
         // addToCredits('Made with BIocklive #blklv')
@@ -2836,76 +2850,7 @@ let blActivateClick = async () => {
 
     });
 };
-
-// share Button & modal
-
-const shareModalContent = `
-<div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-bottom: 15px;">
-    <span style="color: #000; font-size: 30px; line-height: 30px;">Shared With:</span>
-    <button id="ls-share-unlink" style="margin-left: auto; border-radius: 5px; border: 2px solid #54b38d; padding: 3px 10px;" onclick="unlinkProjectButton()">Unlink Project</button>
-</div>
-<div style="display: inline-flex; width: 340px; margin-bottom:10px;">
-    <input id="ls-share-input" style="width: 300px; padding: 7px 18px; background: white; border-radius: 5px; border: 2px solid #54b38d; border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;" placeholder="Scratch Username"/>
-    <button style="height: 40px; width: 40px; background: white; border-radius: 5px; border: 2px solid #54b38d; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; font-size: 25px; color: #000;">+</button>
-</div>
-<div id="ls-shareModal-shared" style="padding-inline: 5px; display: flex; flex-direction: column; gap: 3px; margin-bottom: 15px;">
-</div>
-<p style="margin:0;">*Collaborators must add you as a friend.</p>
-`;
-
-const shareModalCss = `
-    #ls-share-unlink {
-        background: #e8f8f1;
-        transition: 0.2s ease;
-    }
-    #ls-share-unlink:hover {
-        scale: 1.05;
-        background-color: white;
-    }
-`;
-
-function unlinkProjectButton() {
-    let confirmed = confirm("Are you sure you want to unlink this project?");
-
-    if (confirmed) {
-        modal.close();
-        unshareLivescratch();
-    }
-}
-
-function addCollaboratorGUI(user) {
-    const templateElem = document.createElement('template');
-    templateElem.innerHTML = 
-    `
-    <div style="display: inline-flex; width: 330px;">
-        <div style="width: ${ uname == user.username ? '330px' : '290px'}; padding: 7px 18px; background: #f0f0f0; border-radius: 5px; border: 2px solid #e1e1e1; ${ uname == user.username ? '' : 'border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;'}">${uname == user.username ? (user.username + ' (You)') : user.username}</div>
-        ${ uname == user.username ? '' : '<button style="height: 40px; width: 40px; background: #f0f0f0; border-radius: 5px; border: 2px solid #e1e1e1; border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; font-size: 25px; color: #000;">-</button>' }
-    </div>
-    `;
-
-    const innerClone = templateElem.content.cloneNode(true);
-
-    const sharedList = document.querySelector('#ls-shareModal-shared');
-
-    sharedList.appendChild(innerClone);
-
-}
-
-function injectShareModalCss() {
-    let style = document.createElement('style');
-    style.innerHTML = shareModalCss;
-    document.head.appendChild(style);
-}
-
-injectShareModalCss();
-
-let modal = null;
-let blShareClick = () => {
-    modal = new livescratchModal(shareModalContent);
-
-
-    refreshShareModal();
-};
+let blShareClick = () => { console.log('clicked'); blDropdown.style.display = (blDropdown.style.display == 'none' ? 'flex' : 'none'); refreshShareModal(); };
 
 console.log('listening for share button');
 livescratchButton = null;
@@ -2915,7 +2860,7 @@ function doIOwnThis() {
     return store.getState().session.session.user.id == store.getState().preview.projectInfo.author.id;
 }
 function addButtonInjectors() {
-    listenForObj('span[class*="share-button_share-button"]',
+    listenForObj('[class*="share-button_share-button"]',
         (shareButton) => {
             if (document.querySelector('livescratch-init') !== null) { return; }
             // bc.children[1].children[0].innerHTML = "Become Blajingus"
@@ -2952,6 +2897,8 @@ function addButtonInjectors() {
             shareButton.parentNode.insertBefore(container, shareButton);
 
             injectJSandCSS();
+
+            refreshShareModal();
 
             addRevertButton();
 
@@ -3042,8 +2989,9 @@ function revertProject() {
     vm.loadProject(revertJSON);
 }
 
-let COLORS = ['teal', '#c42b63', '#58c198'];
-let COLORS_BRIGHT = ['#00b9d1', '#ff00e6', '#5fd2a5'];
+let COLORS = ['teal', 'var(--extension-main-color)', 'var(--extension-main-color)'];
+let COLORS_BRIGHT = ['var(--extension-main-color)', 'var(--extension-main-color)', 'var(--extension-main-color)'];
+// let COLORS_BRIGHT = ['#00b9d1','#ff00e6', '#5fd2a5'];
 let yo_1 = Math.round(Math.random());
 
 function clearActive() {
@@ -3168,7 +3116,7 @@ const logoUrl = document.querySelector('.livescratch-ext-2').dataset.logoUrl;
 const overlayHTML = `
 <loading-content>
 <img src="${logoUrl}" id="ls-load-logo">
-<div class="ls-loading-text">Loading LiveScratch...</div>
+<div class="ls-loading-text">Loading Blocklive...</div>
 </loading-content>
 </img>`;
 const overlayCSS = `
@@ -3197,7 +3145,7 @@ livescratch-loading{
     font-style: italic;
     font-weight:500;
     font-size: 40px;
-    color:#306852;
+    color:var(--extension-main-color);
 
     transition: 0.34s;
     opacity: 0%;
@@ -3260,10 +3208,12 @@ function injectLoadingOverlay() {
 const editorDarkMode = getComputedStyle(document.documentElement).getPropertyValue('--editorDarkMode-page') !== '';
 
 let chatCss = `
-.emojione{
-    height: 20px;
-    margin-bottom: -3px;
+
+:root{
+    --chat-scale:0.85;
 }
+
+
 .chatdot {
     visibility:hidden;
     position: absolute;
@@ -3283,6 +3233,42 @@ let chatCss = `
     line-height: 1em;
 }
 
+.textbubbleemoji{
+    font-size: 27px;
+    position:relative;
+}
+.bl-chat-toggle-button{
+    user-select: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width:33.59px;
+    height:33.59px;
+    border-radius: 100%;
+    border: solid rgb(203, 203, 203) 3px;
+    background-color: rgb(255, 255, 255);
+    transition: 0.2s;
+
+    margin-left:10px;
+}
+.bl-chat-toggle-button:hover{
+    /* box-shadow: 0 0 15px 0 rgba(255, 0, 208, 0.8); */
+    box-shadow: 5px 5px 3.4px 0px rgba(0,0,0,0.5);
+    transform:translate(-3px,-3px)
+}
+.bl-chat-toggle-button:active{
+    /* box-shadow: 0 0 15px 0 rgba(255, 0, 208, 0.8); */
+    box-shadow: 0px 0px 0px 0px rgba(0,0,0,0.5);
+    transform: none;
+    transition:0.1s;
+}
+
+
+.emojione{
+    height: 20px;
+    margin-bottom: -3px;
+}
+
 .ls-chat-toggle{
     box-shadow: 0px 0px 0px 2px #ffffff3d inset;
     color: #fff;
@@ -3293,12 +3279,12 @@ let chatCss = `
     height: 70%;
     padding: 0 12px;
     width: max-content;
-    background: linear-gradient(115deg, #4A9AFF -12.84%, #57B78A 122.07%);
+    background: linear-gradient(115deg, var(--extension-main-color) -12.84%, var(--extension-main-color-gradient-b) 122.07%);
     transition: background 0.3s ease, transform 0.3s ease;
     cursor: pointer;
 }
 .ls-chat-toggle:hover {
-    background: linear-gradient(115deg, #57B78A -12.84%, #4A9AFF 122.07%); /* Subtle gradient shift */
+    background: linear-gradient(-115deg, var(--extension-main-color) -12.84%, var(--extension-main-color-gradient-b) 122.07%);
     transform: scale(1.05); /* Slightly scale the button for a smooth hover effect */
 }
 .ls-chat-toggle-button{
@@ -3316,6 +3302,7 @@ let chatCss = `
 .mymsg{
     align-self: flex-end;
 }
+ls-msg-space{height:20px}
 ls-msg:not(.mymsg){
     border-top-left-radius: 0;
 }
@@ -3323,16 +3310,16 @@ ls-msg.mymsg{
     border-top-right-radius: 0;
 }
 ls-msg{
-    max-height: 220px;
+    max-height: calc(220px * var(--chat-scale));
     overflow-y: auto;
     flex-shrink: 0;
     color: ${editorDarkMode ? 'var(--editorDarkMode-accent-text)' : '#000000'};
     border:2px solid ${editorDarkMode ? 'var(--editorDarkMode-border)' : 'rgba(0, 0, 0, 0.189)'};
     border-radius: 10px;
-    padding: 5px 6px;
+    padding: calc(5px * var(--chat-scale)) calc(6px * var(--chat-scale));
     max-width: 80%;
-    margin-left: 15px;
-    font-size: 18px;
+    margin-left: calc(15px * var(--chat-scale));
+    font-size: calc(18px * var(--chat-scale));
     background-color: ${editorDarkMode ? 'var(--editorDarkMode-input)' : 'rgb(255, 255, 255)'};
     overflow-wrap: anywhere;
 }
@@ -3341,22 +3328,22 @@ ls-msg-sender-name{
     color: ${editorDarkMode ? 'var(--editorDarkMode-accent-text)' : 'rgb(73, 73, 73)'};
 }
 ls-msg-sender:first-of-type{
-    margin-top: 1px;
+    margin-top: calc(1px * var(--chat-scale));
 }
 ls-msg-sender{
     align-items: center;
-    margin-top: 5px;
+    margin-top: calc(5px * var(--chat-scale));
     display: flex;
     flex-direction: row;
-    gap:5px;
+    gap:calc(5px * var(--chat-scale));
 }
 ls-msg-sender-img{
     background-image: url(https://uploads.scratch.mit.edu/get_image/user/default_60x60.png);
     background-size: contain;
     background-repeat: no-repeat;
-    width:25px;
-    height:25px;
-    border-radius: 10px;
+    width:calc(25px * var(--chat-scale));
+    height:calc(25px * var(--chat-scale));
+    border-radius: calc(10px * var(--chat-scale));
 }
 
 ls-chat-send-button{
@@ -3365,10 +3352,10 @@ ls-chat-send-button{
     flex-shrink: 0;
     display: flex;
     user-select: none;
-    width: 40px;
+    width: calc(40px * var(--chat-scale));
     height: 100%;
-    min-height: 40px;
-    background-color: #4da583;
+    min-height: calc(40px * var(--chat-scale));
+    background-color: var(--extension-main-color);
     color:white;
     text-align: center;
     border-left: 1px solid ${editorDarkMode ? 'var(--editorDarkMode-border)' : '#dcdee0'};
@@ -3379,33 +3366,33 @@ ls-chat-send-button:hover{
     scale: 112%;
 }
 ls-chat-send{
-    max-height: 150px;
-    min-height: 40px;
+    max-height: calc(150px * var(--chat-scale));
+    min-height: calc(40px * var(--chat-scale));
     flex-shrink: 0;
     display: flex;
     flex-direction: row;
     align-items: center;
-    border-radius: 8px;
+    border-radius: calc(8px * var(--chat-scale));
     border-top-right-radius: 0;
     border: 1px solid ${editorDarkMode ? 'var(--editorDarkMode-border)' : '#d9d9d9'};
-    margin: 10px;
+    margin: calc(10px * var(--chat-scale));
     margin-top: 0;
-    box-shadow: 0px -2px 5px 0px #0000001a;
+    box-shadow: 0px calc(-2px * var(--chat-scale)) calc(5px * var(--chat-scale)) 0px #0000001a;
     overflow: clip;
 }
 
 ls-chat-input{
     flex-grow: 1;
-    max-height:150px;
-    min-height:40px;
+    max-height:calc(150px * var(--chat-scale));
+    min-height:calc(40px * var(--chat-scale));
     overflow-y: auto;
     text-overflow: clip;
     overflow-wrap: anywhere;
 
 
-    font-size:17px;
+    font-size:calc(17px * var(--chat-scale));
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    padding:10px;
+    padding:calc(10px * var(--chat-scale));
     background-color: ${editorDarkMode ? 'var(--editorDarkMode-input)' : 'white'};
 
     /* text-align: center; */
@@ -3418,32 +3405,33 @@ ls-chat-msgs{
     display: flex;
     flex-shrink:1;
     flex-direction: column;
-    padding:10px;
+    padding:calc(10px * var(--chat-scale));
     overflow-y: scroll;
     /* height:400px; */
     flex-grow:1;
 
     /* min-height: 15px; */
     /* width: 100%; */
+    padding-top:calc(5px * var(--chat-scale));
     font-family: Tahoma, sans-serif;
-    font-size: 20px;
-    line-height: 20px;
+    font-size: calc(20px * var(--chat-scale));
+    line-height: calc(20px * var(--chat-scale));
     color:rgb(38, 38, 38);
-    gap:3px;
+    gap:calc(3px * var(--chat-scale));
     align-items: flex-start;
 }
-ls-chat-msgs::-webkit-scrollbar { width: 2px !important }
+ls-chat-msgs::-webkit-scrollbar { width: 0 !important }
 ls-chat-msgs { overflow: -moz-scrollbars-none; }
 
 ls-chat-head-button{
     cursor:pointer;
 
     border-radius: 100%;
-    padding:4px;
-    width:25px;
-    height:25px;
+    padding:calc(4px * var(--chat-scale));
+    width:calc(25px * var(--chat-scale));
+    height:calc(25px * var(--chat-scale));
     text-align: center;
-    background-color: #397f64;
+    background-color: var(--extension-main-darker-color);
     transition: 0.2s scale;
 
     display: flex;
@@ -3451,7 +3439,7 @@ ls-chat-head-button{
     justify-content: center;
 }
 ls-chat-head-button:not(:last-of-type) {
-    margin-right: 5px;
+    margin-right: calc(5px * var(--chat-scale));
 }
 ls-chat-head-button:hover{
     scale: 112%;
@@ -3463,9 +3451,9 @@ ls-chat-head-filler{
 ls-chat-head-text{
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-weight: bold;
-    font-size: 20px;
+    font-size: calc(20px * var(--chat-scale));
     color:white;
-    margin-right: 5px;
+    margin-right: calc(5px * var(--chat-scale));
 }
 ls-chat-head {
     user-select: none;
@@ -3473,27 +3461,27 @@ ls-chat-head {
     flex-direction: row;
     align-items: center;
     width: 100%;
-    height:45px;
+    height:calc(45px * var(--chat-scale));
     flex-shrink:0;
     /* min-height:45px; */
-    background-color: #4da583;
-    border-radius: 8px;
-    padding-inline: 11px;
-    box-shadow: 0px 0px 6px 0px rgba(0,0,0,0.5);
+    background-color: var(--extension-main-color);
+    border-radius: calc(8px * var(--chat-scale));
+    padding-inline: calc(11px * var(--chat-scale));
+    box-shadow: 0px 0px calc(6px * var(--chat-scale)) 0px rgba(0,0,0,0.5);
     z-index: 50;
 }
 
 ls-chat{
-    border-radius: 8px;
+    border-radius: calc(8px * var(--chat-scale));
 
     display:flex;
-    max-width: 300px;
-    min-width: 250px;
+    max-width: calc(300px * var(--chat-scale));
+    min-width: calc(250px * var(--chat-scale));
     height:auto;
     flex-direction: column;
 
-    margin-left: 0.5rem;
-    margin-top: 2.75rem;
+    margin-left: calc(0.5rem * var(--chat-scale));
+    margin-top: calc(2.75rem * var(--chat-scale));
     border-bottom: 0;
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
@@ -3511,19 +3499,19 @@ ls-chat.popout ls-chat-head{
 }
 ls-chat.popout{
     margin: 0;
-    border-radius: 8px;
-    box-shadow: 2px 2px 11px #0000003b;
+    border-radius: calc(8px * var(--chat-scale));
+    box-shadow: calc(2px * var(--chat-scale)) calc(2px * var(--chat-scale)) calc(11px * var(--chat-scale)) #0000003b;
     position: absolute;
 
-    min-height: 280px;
-    max-height: 700px;
-    max-width: 600px;
+    min-height: calc(280px * var(--chat-scale));
+    max-height: calc(700px * var(--chat-scale));
+    max-width: calc(600px * var(--chat-scale));
 
-    width: 300px;
-    height: 500px;
+    width: calc(300px * var(--chat-scale));
+    height: calc(500px * var(--chat-scale));
 
-    left: 250px;
-    top: 70px;
+    left: calc(250px * var(--chat-scale));
+    top: calc(70px * var(--chat-scale));
     resize: both;
     overflow: auto;
 
@@ -3561,12 +3549,12 @@ function addChat() {
         injectChatCSS();
         injectEmojiOne();
 
-        let lsChat = document.createElement('ls-chat');
-        lsChat.id = 'ls-chat';
-        lsChat.innerHTML = ChatHTML;
-        // lsChat.style.visibility = 'hidden'
+        let blChat = document.createElement('ls-chat');
+        blChat.id = 'ls-chat';
+        blChat.innerHTML = ChatHTML;
+        // blChat.style.visibility = 'hidden'
         let parentContainer = document.body.querySelector('#app').querySelector('.box_box_bP3Aq').querySelector('.gui_flex-wrapper_Zk207');
-        parentContainer.insertBefore(lsChat, parentContainer.childNodes[1]);
+        parentContainer.insertBefore(blChat, parentContainer.childNodes[1]);
 
         let chatbox = document.querySelector('ls-chat');
 
@@ -3606,18 +3594,38 @@ function addChat() {
 }
 function addChatButton() {
     try {
-        let chatElem = document.createElement('div');
-        chatElem.id = 'lsChatButton';
-        chatElem.classList.add('ls-chat-toggle-button');
-        chatElem.innerHTML = '<span class="ls-chat-toggle" onclick="toggleChat()"><span>💬 LiveScratch Chat</span><span class="chatdot"></span></span>';
 
-        const tab_list = document.querySelector('.gui_tab-list_VOr4n');
-        tab_list.appendChild(chatElem);
+        let chatElem = document.createElement('div')
+        chatElem.id = 'blChatButton'
+        chatElem.classList.add('bl-chat-toggle-button')
+        chatElem.innerHTML = `<span class="textbubbleemoji" onclick="toggleChat()"><span>💬</span><span class="chatdot"></span></span>`
+        let panel = document.getElementById('blUsersPanel')
 
-        setChatUnread(chatUnreadCount);
+        let newPanel = document.createElement('div')
+        newPanel.id = 'noRefreshPanel'
+        newPanel.style = "display: flex; jusify-content:center; align-items: center; gap: 3px; max-width: 300px;"
+        panel.parentElement.insertBefore(newPanel, panel.nextElementSibling)
 
-        if (!blId) { chatElem.style.visibility = 'hidden'; }
-        else { chatElem.style.visibility = 'visible'; }
+        newPanel.appendChild(chatElem)
+
+        setChatUnread(chatUnreadCount)
+
+        if (!blId) { chatElem.style.visibility = 'hidden' }
+        else { chatElem.style.visibility = 'visible' }
+
+
+        // let chatElem = document.createElement('div');
+        // chatElem.id = 'blChatButton';
+        // chatElem.classList.add('ls-chat-toggle-button');
+        // chatElem.innerHTML = '<span class="ls-chat-toggle" onclick="toggleChat()"><span>💬 Blocklive Chat</span><span class="chatdot"></span></span>';
+
+        // const tab_list = document.querySelector('.gui_tab-list_VOr4n');
+        // tab_list.appendChild(chatElem);
+
+        // setChatUnread(chatUnreadCount);
+
+        // if (!blId) { chatElem.style.visibility = 'hidden'; chatElem.style.display = 'none'; }
+        // else { chatElem.style.visibility = 'visible'; chatElem.style.display = 'flex'; }
 
     } catch (e) { console.error(e); }
 }
@@ -3635,9 +3643,9 @@ function setChatUnread(num) {
 let ChatHTML = `
 <ls-chat-head id="ls-chat-banner">
     <img id="logo" src="${logoUrl}" style="height: 25px; margin-right: 5px;">
-    <ls-chat-head-text>Livescratch Chat</ls-chat-head-text>
+    <ls-chat-head-text>Blocklive Chat</ls-chat-head-text>
     <ls-chat-head-filler></ls-chat-head-filler>
-    <ls-chat-head-button id="popout" style="background-color: #4f947a;">
+    <ls-chat-head-button id="popout" style="background-color: var(--extension-main-color);">
         <img src="data:image/svg+xml;charset=utf-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20height%3D%2224px%22%20viewBox%3D%220%20-960%20960%20960%22%20width%3D%2224px%22%20fill%3D%22%23FFFFFF%22%3E%3Cpath%20d%3D%22M80.09-80.09v-799.82h412.13v122.95H203.04v553.92h553.92v-289.18h122.95v412.13H80.09Zm323.56-238.26-85.3-85.3%20353.3-353.31h-99.43v-122.95h307.69v307.69H756.96v-99.43l-353.31%20353.3Z%22%2F%3E%3C%2Fsvg%3E" style="height: 100%;">
     </ls-chat-head-button>
     <ls-chat-head-button onclick="toggleChat(false)">
@@ -3645,7 +3653,7 @@ let ChatHTML = `
     </ls-chat-head-button>
 </ls-chat-head>
 <ls-chat-msgs>
-    
+    <ls-msg-space></ls-msg-space>
 </ls-chat-msgs>
 <ls-chat-send>
     <ls-chat-input contenteditable="true"></ls-chat-input>
@@ -3655,6 +3663,7 @@ let ChatHTML = `
 
 // msg: {text, sender}
 lastSender = '';
+uname = '';
 let pingUrl;
 chrome.runtime.sendMessage(exId, { meta: 'getUrl', for: '/sounds/ping.mp3' }, url => {
     pingUrl = url;
@@ -3725,10 +3734,6 @@ async function addMessage(msg, notif) {
         ':bangbang:', // ‼️
         ':moyai:', // 🗿
         ':nerd:', // 🤓
-        ':speaking_head:', // 🗣️
-        ':money_mouth:', // 🤑
-        ':deaf_man:', // 🧏‍♂️
-        ':shushing_face:', // 🤫
         ':waakul:', // https://cdn2.scratch.mit.edu/get_image/user/128606483_60x60.png Custom Emoji
         ':livescratch:', // https://livescratch.waakul.com/assets/logo.png Custom Emoji
     ];

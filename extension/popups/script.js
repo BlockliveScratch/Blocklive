@@ -57,9 +57,11 @@ function validateUrl(input) {
 
 document.querySelectorAll('button.credit').forEach(function(credit){
     credit.onclick = () => {
+        let url = credit.getAttribute('url')
         let username = credit.querySelector('.credit-name').innerText;
         chrome.tabs.create({
-            url: `https://scratch.mit.edu/users/${username}`,
+            // url: `https://scratch.mit.edu/users/${username}`,
+            url
         });
     };
 });   

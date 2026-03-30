@@ -23,17 +23,15 @@ const getStorageValue = (key) => {
     });
 };
 
-
-const defaultApiUrl = 'https://blserver.waakul.com'
 const getApiUrl = async () => {
     const customServer = await getStorageValue('custom-server');
 
     if (customServer) {
         const serverUrl = await getStorageValue('server-url');
-        return serverUrl || defaultApiUrl;
+        return serverUrl || 'https://livescratchapi.waakul.com';
     }
 
-    return defaultApiUrl;
+    return 'https://livescratchapi.waakul.com';
 };
 
 let apiUrl;
@@ -140,7 +138,7 @@ async function backgroundScript() {
 
     const newProjectPage = 'https://scratch.mit.edu/create';
     async function prepRedirect(tab) {
-        if (uname == '*') { return false; }importScripts('background/socket.io.js', 'background/livescratchProject.js', 'background/auth.js');
+        if (uname == '*') { return false; }
         let id = getProjectId(tab.url);
 
 
@@ -380,7 +378,7 @@ async function backgroundScript() {
                     chrome.notifications.create(null,
                         {
                             type: 'basic',
-                            title: 'Livescratch Chat',
+                            title: 'Blocklive Chat',
                             contextMessage: `${msg.sender} says in '${msg.project}':`,
                             message: msg.text,
                             // iconUrl:chrome.runtime.getURL('img/livescratchfullres.png'),

@@ -1,12 +1,16 @@
 *{
-    --BG: linear-gradient(147deg, #E2FFE2 -9.97%, #D8E8FF 134.99%);
-    --Text: #2c2c2c;
+    --BG: var(--extension-main-page-bg);
+    /* --BG: linear-gradient(147deg, #E2FFE2 -9.97%, #D8E8FF 134.99%); */
+    --Text: black;
     --Supplementary: rgba(255, 255, 255, 0.29);
     --Sub: rgba(255, 255, 255, 0.611);
     --Sub-Semi: rgba(255, 255, 255, 0.4);
     --button-large-stroke: rgba(255, 255, 255, 0.58);
-    --button-large: linear-gradient(115deg, #4A9AFF -12.84%, #57B78A 122.07%);
-    --switch-enabled: linear-gradient(116deg, #56B48B 0%, #55AAB5 78.39%);
+    /* --button-large: linear-gradient(115deg, #4A9AFF -12.84%, #57B78A 122.07%);
+    --switch-enabled: linear-gradient(116deg, #56B48B 0%, #55AAB5 78.39%); */
+
+    --button-large:var(--extension-main-color);
+    --switch-enabled:var(--extension-main-darker-color);
 }
 
 #link-uptime img {
