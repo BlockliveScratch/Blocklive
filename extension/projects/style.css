@@ -1,0 +1,142 @@
+body {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--BG);
+  height: 100vh;
+  margin: 0;
+}
+* {
+  font-family: Montserrat;
+  font-style: normal;
+  line-height: normal;
+  font-weight: 400;
+  font-size: 14.039px;
+  color: var(--Text);
+}
+
+header {
+  display: flex;
+  padding: 11px 15px;
+  align-items: center;
+  gap: 9px;
+  align-self: stretch;
+  z-index: 10;
+  /* background: linear-gradient(100deg, #4C97FF -2.26%, #59C059 135.83%); */
+  background:var(--extension-main-color);
+  box-shadow: 0px 0px 102.3px 0px rgba(0, 0, 0, 0.08);
+}
+
+header #logo {
+  width: 52px;
+}
+
+header #title {
+  color: #FFF;
+  font-family: Montserrat;
+  font-size: 23.398px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+}
+
+header #version {
+  color: rgba(255, 255, 255, 0.83);
+  font-family: Montserrat;
+  font-size: 15.599px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+}
+
+header #switch-theme {
+  width: 31.2px;
+  height: 31.2px;
+  position: absolute;
+  right: 0;
+  padding: 18px;
+  cursor: pointer;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: 23.398px;
+  opacity: 1;
+  z-index: 5;
+}
+
+info {
+  opacity: 0.5;
+  z-index: 4;
+}
+
+#contents {
+  display: flex;
+  padding: 15.599px 23.398px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 13.259px;
+  align-self: stretch;
+  justify-content: center;
+}
+
+#floating-logo-back {
+  width: 165.068px;
+  height: 172.163px;
+  transform: rotate(-10.941deg);
+  position: absolute;
+  right: 40px;
+  top: 100px;
+  opacity: 0.50;
+  filter: blur(40px);
+  z-index: 0;
+}
+
+#floating-logo {
+  width: 165.068px;
+  height: 172.163px;
+  transform: rotate(-10.941deg);
+  position: absolute;
+  right: 40px;
+  top: 100px;
+  opacity: 0.50;
+  filter: blur(12px);
+  z-index: 2;
+}
+
+.project {
+  width: 15rem;
+  display: inline-block;
+  /* background-color: var(--Sub); */
+  background:var(--extension-main-color);
+  filter:drop-shadow(2px 4px 6px black);
+  padding: 0.8rem;
+  border-radius: 0.5rem;
+  margin: 0.5rem;
+  cursor: pointer;
+  transform: scale(1);
+  transition: transform 0.3s;
+}
+.project:hover {
+  transform: scale(1.05);
+}
+
+.project img {
+  width: 100%;
+  border-radius: 0.5rem;
+}
+
+.project .title {
+  color: var(--Text);
+  /* color:var(--extension-main-text-color); */
+  margin-top: 0.5px;
+  display: block;
+  font-weight: bold;
+  font-size: 1rem;
+  margin-left: 0.25rem;
+  overflow-y: auto;
+}

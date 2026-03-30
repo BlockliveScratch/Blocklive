@@ -1,0 +1,7 @@
+*/node_modules/
+*.crx
+*.pem
+*.DS_Store
+backend/storage
+/debug/
+backend/.env

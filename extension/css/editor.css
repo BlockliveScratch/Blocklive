@@ -1,0 +1,10 @@
+.sharedName:hover {
+    text-decoration: underline;
+}
+#resultName:hover {
+    text-decoration: underline;
+}
+
+.result:hover {
+background: #6aa8ff;
+}

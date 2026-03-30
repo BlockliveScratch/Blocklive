@@ -1,0 +1,7 @@
+.blbadge {
+    transition: 0.4s;
+    transition-property: rotate, transform;
+}
+.blbadge:hover {
+    rotate:360deg;
+}

@@ -1,0 +1,16 @@
+*{
+    --BG: linear-gradient(147deg, #1d1016 -9.97%, #0c0109 134.99%);
+    /* --BG:rgb(0, 0, 0); */
+    --Text: #FFF;
+    --Supplementary: rgba(255, 255, 255, 0.14);
+    --Sub: rgba(255, 255, 255, 0.337);
+    --Sub-Semi: rgba(255, 255, 255, 0.1);
+    --button-large-stroke: rgba(255, 255, 255, 0.31);
+    /* --button-large: linear-gradient(115deg, #4794F6 -12.84%, #55B488 122.07%);
+    --switch-enabled: linear-gradient(116deg, #56B48B 0%, #55AAB5 78.39%); */
+}
+
+#credits .credit, #links a {
+    background-color: var(--Supplementary);
+    border-color: var(--Supplementary);
+}
