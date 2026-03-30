@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="popup.css">
+    <link rel="stylesheet" href="/css/root.css">
+  </head>
+  <body class="light-mode">
+    <header>
+      <img id="logo" src="/img/LogoBlocklive.svg"></img>
+      <span id="title">Blocklive</span>
+      <span id="version"></span>
+      <span id="switch-theme" class="button"></span>
+    </header>
+
+    <div id="loggedout" style="display: none;">
+      <img id="floating-logo-back" src="/img/LogoBlockliveFlat.svg">
+      <img id="floating-logo" src="/img/LogoBlockliveFlat.svg">
+      <span class="title">Uh Oh! You're Logged Out!</span>
+      <info>Login to use Blocklive!</info>
+    </div>
+
+    <div id="contents">
+      <img id="floating-logo-back" src="/img/LogoBlockliveFlat.svg">
+      <img id="floating-logo" src="/img/LogoBlockliveFlat.svg">
+      <div id="friends-list">
+        <div class="group">
+          <span class="title">Your Friends List:</span>
+          <info>Allow collaborating with friends</info>
+        </div>
+
+        <div class="input">
+          <input id="add" type="text" placeholder="Add Username"/>
+          <span class="material-symbols-outlined button" id="submit">add</span>
+        </div>
+
+        <ul id="friends">
+        </ul>
+
+        <button id="projects" class="button">View Projects</button>
+      </div>
+
+      <section id="settings-container">
+      
+      <span id="settings-dropdown" style="z-index: 20; width: max-content; color: var(--Text-Solid); display: flex; flex-direction: row; gap: 2px; align-items: center;"><span class="material-symbols-outlined">settings</span>Settings<span class="material-symbols-outlined" style="margin-left: -3px; color: var(--Text);">arrow_drop_down</span></span>
+      <section id="settings">
+      <section id="project-chat">
+        <span>Project Chats:</span>
+        <div class="flex-horiz">
+          <div style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
+            <input type="checkbox" id="notifs"/>
+            <label for="notifs">Notifications</label>
+          </div>
+
+          <div style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
+            <input type="checkbox" id="ping-sounds"/>
+            <label for="ping-sounds">Ping Sounds</label>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <div class="flex-horiz">
+          <span>Custom Server:</span>
+          <info>Warning: Advanced Setting</info>
+        </div>
+        <div class="flex-horiz">
+          <div style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
+            <input type="checkbox" id="custom-server"/>
+            <input
+              type="url"
+              id="server-url"
+              placeholder="Custom Server URL"
+              disabled
+            />
+          </div>
+        </div>
+      </section>
+
+      <div class="flex-horiz">
+        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4px;">
+          <label class="switch" style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
+            <input type="checkbox" id="badges">
+            <span class="slider round"></span>
+          </label>
+          <span>Show Badges</span>
+        </div>
+
+        <div style="display: flex; flex-direction: row; align-items: center; justify-content: center;">
+          <input type="checkbox" id="privme"/>
+          <label for="privme">Hide that i use Blocklive</label>
+        </div>
+      </div>
+    </section>
+  </section>
+
+      <div id="not-verified" class="popup" style="display: none; align-items: flex-start;">
+        <span class="title">It seems like you're not verified!</span>
+        <span>To verify, open scratch in a new tab and wait for 10 seconds.</span>
+        <span>If you're still not verified contact @Waakul</span>
+      </div>
+
+      <div id="error" class="popup" style="display: none; align-items: flex-start;">
+        <span class="title">Request Error :(</span>
+        <span id="error-content"></span>
+      </div>
+    </div>
+
+    <footer>
+      <section>
+        <!-- <span>Developers:</span> -->
+        <div id="credits" class="flex-horiz">
+          <button class="credit button" url="https://github.com/meechapooch">
+            <img src="https://cdn2.scratch.mit.edu/get_image/user/5097744_60x60.png"/>
+            <span class="credit-name">Meecha Pooch</span>
+            <div class="afterword creator">Creator</div>
+          </button>
+
+            <button class="credit button" url="https://scratch.mit.edu/users/waakul">
+            <img src="/img/waakul_90x90.png"/>
+            <span class="credit-name">Waakul</span>
+            <div class="afterword maintainer">Maintainer</div>
+          </button>
+
+            <button class="credit button" url="https://scratch.mit.edu/users/rgantzos">
+            <img src="https://cdn2.scratch.mit.edu/get_image/user/34248128_60x60.png"/>
+            <span class="credit-name">rgantzos</span>
+          </button>
+        </div>
+      </section>
+
+      <hr/>
+
+      <div id="links" class="flex-horiz">
+        <a id="link-hub" class="tooltip" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4px;">
+          <img src="/img/LogoBlocklive.svg"/>
+          <span>Hub</span>
+          <span class="tooltiptext tooltip-right">Coming Soon!</span>
+        </a>
+
+        <a id="link-uptime" href="#" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4px;">
+          <img src="/img/Green-Circle.png"/>
+          <span>Uptime</span>
+        </a>
+
+        <a id="link-donate" href="#" style="display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 4px;">
+          <img src="/img/kofi.png"/>
+          <span>Please Donate</span>
+        </a>
+      </div>
+    </footer>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>

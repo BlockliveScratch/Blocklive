@@ -79,10 +79,11 @@ chrome.runtime.onInstalled.addListener(async (details) => {
     }
 
     if (details.reason === chrome.runtime.OnInstalledReason.INSTALL) {
-        chrome.tabs.create({ url: 'https://ko-fi.com/waakul' });
-        chrome.tabs.create({ url: 'https://livescratch.waakul.com' });
+        chrome.tabs.create({ url: 'https://sites.google.com/view/blocklive/home' });
+        // chrome.tabs.create({ url: 'https://ko-fi.com/waakul' });
+        // chrome.tabs.create({ url: 'https://livescratch.waakul.com' });
     } else if (details.reason === chrome.runtime.OnInstalledReason.UPDATE) {
-        chrome.tabs.create({ url: 'https://livescratch.waakul.com' /* 'https://livescratch.waakul.com/new-release' */ });
+        // chrome.tabs.create({ url: 'https://sites.google.com/view/blocklive/new-blocklive-version' /* 'https://livescratch.waakul.com/new-release' */ });
     }
 });
 

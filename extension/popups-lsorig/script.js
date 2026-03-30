@@ -8,7 +8,6 @@ document.querySelector('#version').innerHTML = 'v'+version;
 
 document.getElementById('server-url').defaultValue = 'https://livescratchapi.waakul.com';
 
-
 {
     (async () => {
         const data = await chrome.storage.local.get('custom-server');
@@ -37,12 +36,12 @@ document.getElementById('switch-theme')?.addEventListener('click', function(){
 });
 
 let settingsDropdown = false;
-// document.getElementById('settings').style.display = settingsDropdown ? 'flex' : 'none';
-// document.getElementById('settings-dropdown')?.addEventListener('click', function() {
-//     settingsDropdown = !settingsDropdown;
-//     console.log(settingsDropdown);
-//     document.getElementById('settings').style.display = settingsDropdown ? 'flex' : 'none';
-// });
+document.getElementById('settings').style.display = settingsDropdown ? 'flex' : 'none';
+document.getElementById('settings-dropdown')?.addEventListener('click', function() {
+    settingsDropdown = !settingsDropdown;
+    console.log(settingsDropdown);
+    document.getElementById('settings').style.display = settingsDropdown ? 'flex' : 'none';
+});
 
 document.querySelector('button#projects')?.addEventListener('click', function () {
     chrome.tabs.create({
@@ -56,7 +55,7 @@ function validateUrl(input) {
     return regex.test(value);
 }
 
-document.querySelectorAll('.credits .credit').forEach(function(credit){
+document.querySelectorAll('button.credit').forEach(function(credit){
     credit.onclick = () => {
         let url = credit.getAttribute('url')
         let username = credit.querySelector('.credit-name').innerText;
@@ -171,31 +170,21 @@ chrome.runtime.sendMessage({ meta: 'getUsernamePlus' }, function (info) {
 
         let item = document.createElement('li');
         item.username = name;
-        item.innerHTML = `<span class="friend-name" >@${sanitize(name)}</span>  <span class="x" href="page2.html">x</span>`;
+        item.innerHTML = `<span class="button">@${sanitize(name)}</span><span class="material-symbols-outlined x button">remove</span>`;
         item.onclick = (e) => {
-            if (e.target?.classList?.contains('x')) { removeFriend(name) }
+            if (e.target?.classList?.contains('x')) {
+                removeFriend(name); 
+                document.querySelector('#projects').style.opacity = 1;
+            }
             else { chrome.tabs.create({ url: `https://scratch.mit.edu/users/${name}` }); }
-        }
-
-        document.querySelector('#friends').appendChild(item)
-
-        // old livescratch
-
-        // item.innerHTML = `<span class="button">@${sanitize(name)}</span><span class="material-symbols-outlined x button">remove</span>`;
-        // item.onclick = (e) => {
-        //     if (e.target?.classList?.contains('x')) {
-        //         removeFriend(name); 
-        //         document.querySelector('#projects').style.opacity = 1;
-        //     }
-        //     else { chrome.tabs.create({ url: `https://scratch.mit.edu/users/${name}` }); }
-        // };
-        // item.onmouseenter = (e) => {
-        //     document.querySelector('#projects').style.opacity = 0.5;
-        // };
-        // item.onmouseleave = (e) => {
-        //     document.querySelector('#projects').style.opacity = 1;
-        // };
-        // document.querySelector('#friends').appendChild(item);
+        };
+        item.onmouseenter = (e) => {
+            document.querySelector('#projects').style.opacity = 0.5;
+        };
+        item.onmouseleave = (e) => {
+            document.querySelector('#projects').style.opacity = 1;
+        };
+        document.querySelector('#friends').appendChild(item);
     }
 
     async function addFriend(name) {
@@ -210,7 +199,7 @@ chrome.runtime.sendMessage({ meta: 'getUsernamePlus' }, function (info) {
         if (statusCode===200) {
             addFriendGUI(name);
         } else {
-            alert(`The user you tried to friend doesn't have Blocklive or Livescratch!`);
+            alert('The user you tried to friend doesnt have livescratch!');
         }
     }
 
@@ -240,10 +229,8 @@ chrome.runtime.sendMessage({ meta: 'getUsernamePlus' }, function (info) {
                 else { list.forEach(addFriendGUI); }
             }))
             .catch((e) => {
-                try{
                 document.querySelector('#error').style.display = 'inherit';
                 document.querySelector('#error-content').innerHTML = e.stack.replace(new RegExp(`chrome-extension://${chrome.runtime.id}/`, 'g'), '');
-                } catch(e) {console.error(e)}
             });
     }
 
@@ -264,9 +251,6 @@ function showNoAuthMessage() {
     document.querySelector('#not-verified').style.display = 'inherit';
 }
 
-document.getElementById('link-discord').onclick = () => {
-    chrome.tabs.create({ url: `https:\/\/discord.gg/9ZQQhvAvqp` });
-}
 document.getElementById('link-uptime').onclick = () => {
     chrome.tabs.create({ url: 'https://status.uptime-monitor.io/67497373f98a6334aaea672d' });
 };

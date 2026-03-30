@@ -1,0 +1,369 @@
+body {
+    /* width:300px;
+    
+    background-color: rgb(0, 153, 255);  */
+    display:flex;
+    flex-direction: column;
+    width: 300px;
+    /* height: calc(500px - 3.5rem); */
+    /* padding-top: 3.5rem; */
+    overflow: hidden;
+}
+body::-webkit-scrollbar{
+    display: none;
+}
+
+
+.logo{
+    --size:140px;
+    position: absolute;
+    margin-left:calc(100% - var(--size));
+    width:var(--size);
+    z-index: -1000;
+    filter:blur(1px);
+
+    /* transform: translate(20px,-10px); */
+}
+
+input#searchh {
+    width: 100%;
+    outline: none;
+    border: 0px;
+    background: #eaeaea;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+}
+
+button#submit {
+    background: #ff00e6;
+    outline: 0px;
+    border: 0px;
+    border-radius: 0.25rem;
+    position: relative;
+    top: 0px;
+    transition: top .3s;
+    color: white;
+    cursor: pointer;
+    width: 3rem;
+    margin-left: .5rem;
+}
+
+button#submit:hover {
+    top: .5rem;
+}
+
+.nav {
+    background-color: #ff00e6;
+    padding: .5rem;
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    width: calc(100vw - 1rem);
+    text-align: center;
+}
+
+.logo {
+    /* transform: rotate(0deg); */
+    transition: transform .3s;
+}
+
+/* .logo:hover ~ .logo {
+    transform: rotate(360deg);
+} */
+
+#logo-detector{
+    z-index: 1000;
+    /* visibility: hidden; */
+    opacity: 0%;
+}
+
+
+#search {
+    margin-top: 40px;
+    display: flex;
+    width: 250px;
+    height:50px;
+    background: white;
+    border: hidden;
+    outline:hidden;
+    border-radius: 15px;
+}
+
+#list {
+    margin-top: 40px;
+    display: flex;
+    width: 250px;
+    flex-grow: 1;
+    background: rgb(19, 68, 124);
+    border: hidden;
+    outline:hidden;
+    border-radius: 15px;   
+}
+info{
+    font-style: italic;
+    font-size:small;
+    color:rgb(78, 78, 78);
+}
+conta{
+    display: flex;
+    margin-top: 20px;
+    flex-direction: row;
+}
+
+ul{
+    margin-top:10px;
+    /* min-height: 200px; */
+}
+
+.x{
+    color: white;
+    font-size: large;
+    background-color: #ff00e6;
+    color: white;
+    padding: 0.25em;
+    border-radius: 0.25em;
+    position: relative;
+    cursor: pointer;
+    padding-top: 0.15em;
+    position: relative;
+    top: -.25em;
+    transition: top .3s;
+    float: right;
+    padding-left: 1em;
+    padding-right: 1em;
+}
+
+.x:hover {
+    top: -.1rem;
+}
+.friend-name{
+    text-decoration:none; color:hsv(299, 100, 12); font-size:20px; font-weight:bold;
+}
+
+button.viewall {
+    width: 100%;
+    padding: .5rem;
+    border-radius: .25rem;
+    background-color: #ff00e6;
+    color: white;
+    outline: none;
+    border: 0px;
+    margin-bottom: .5rem;
+    position: relative;
+    top: 0;
+    transition: top .3s;
+    cursor: pointer;
+    margin-top: .5rem;
+}
+
+button.viewall:hover {
+    top: .25rem;
+}
+
+ul {
+    list-style-type: none; /* Remove bullets */
+  padding: 0; /* Remove padding */
+  margin: 0; /* Remove margins */
+  max-height:calc(280px + 2.5rem);
+  overflow-y: auto;
+}
+
+/* copied from https://stackoverflow.com/questions/68036783/how-to-hide-scrollbar-track */
+*::-webkit-scrollbar {
+    background-color: transparent;
+    width: 15px;
+  }
+  *::-webkit-scrollbar-track {
+    background-color: transparent;
+  }
+  *::-webkit-scrollbar-thumb {
+    border-radius: 20px;
+    border: 4px solid transparent;
+    background-color: rgba(0,0,0,0.2);
+    background-clip: content-box;
+  }
+
+li {
+    width: calc(100% - 1rem);
+    margin-top: 0.25rem;
+    border-radius: 0.25rem;
+    background-color: #eaeaea;
+    padding: 0.5rem;
+    transition-duration: 0.2s;
+    cursor: pointer;
+}
+li:hover{
+    /* scale:105%; */
+    /* transform:translateX(0.5rem); */
+    margin-left:7px;
+    width: calc(100% - 1rem - 7px);
+    /* color:#ff6ff1; */
+    color:#ff00e6;
+    /* background-color: #f3f3f3; */
+    /* background-color: #e2e2e2; */
+    background-color: #ffe1ff;
+}
+
+
+
+.link{
+    align-items: center;
+    gap:3px;
+}
+/* credit */
+
+br{
+    margin-bottom: 1em !important;
+}
+.credit{
+    justify-content: space-around;
+    display:flex;
+    flex-flow:row;
+    margin:8px;
+    /* gap:5px; */
+  
+  }
+  
+  /* creator buttons */
+  .creator_detector{
+    width:max-content;
+    height:max-content;
+    
+      perspective: 300px;
+  }
+  
+  .creator_thing {
+    box-shadow: -5px 5px 5px hsla(0,0%,0%,0.2);
+    
+    transition: .3s;
+    display:flex;
+    flex-flow: row;
+    /* gap:10px; */
+    align-items:center;
+    
+    max-width:300px;
+    width:min-content;
+    height:40px;
+    /* padding-right:10px; */
+    
+    border-radius: 25px;
+    background-color: hsl(10, 0%, 90%);
+  
+  }
+  .creator_img{
+    height:100%;
+    border-radius:100%;
+  }
+  .creator_name{
+    margin:10px;
+    font-family:system-ui, sans-serif;
+    font-weight:bold;
+    font-size:19px;
+  }
+  
+  .creator_detector:hover > .creator_thing{
+      /* margin-left:7px; */
+      /* width: calc(100% - 1rem - 7px); */
+      /* color:#ff6ff1; */
+      color:#ff00e6;
+      /* background-color: #f3f3f3; */
+      /* background-color: #e2e2e2; */
+      background-color: #ffe1ff;
+      transform: rotateX(calc(360deg));
+      /* flex-flow:row-reverse; */
+  }
+
+  .requestError{
+    /* text-align: center; */
+    align-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding:10px;
+  }
+
+  unverified{
+    display:none;
+    position: absolute;
+    top:10px;
+    right:10px;
+    color:white;
+    background-color: #ff00e6;
+    /* opacity: 50%; */
+  }
+
+
+
+
+
+  /* switches from w3schools */
+
+  /* The switch - the box around the slider */
+
+  .container {
+    width:calc(60px * 0.6);
+    height:calc(34px * 0.6);
+    scale:60%;
+    transform: translate(-16px, -6px);
+
+  }
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+
+  }
+  
+  /* Hide default HTML checkbox */
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  /* The slider */
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .2s;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: .2s;
+  }
+  
+  input:checked + .slider {
+    background-color: #2196F3;
+  }
+  
+  input:focus + .slider {
+    box-shadow: 0 0 1px #2196F3;
+  }
+  
+  input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+  }
+  
+  /* Rounded sliders */
+  .slider.round {
+    border-radius: 34px;
+  }
+  
+  .slider.round:before {
+    border-radius: 50%;
+  }
