@@ -6,6 +6,7 @@ import 'dotenv/config';
 ///////////
 import express from 'express';
 const app = express();
+import fs from 'fs'
 import cors from 'cors';
 app.use(cors({origin:'*'}));
 app.use(express.json({ limit: '5MB' }));
@@ -31,6 +32,9 @@ import { installCleaningJob } from './utils/removeOldProjects.js';
 import { countRecentShared, recordPopup } from './utils/recentUsers.js';
 import {setPaths, authenticate, fullAuthenticate, freePassesPath, freePasses} from './utils/scratch-auth.js';
 import initSockets from './WebSockets.js';
+import { saveMapToFolder } from './utils/fileStorage.js';
+import { saveRecent } from './utils/recentUsers.js';
+
 
 const restartMessage = 'The Livescratch server is restarting. You will lose connection for a few seconds.';
 
@@ -75,6 +79,7 @@ async function finalSave(sessionManager) {
         await saveRecent();
         process.exit();
     } catch (e) {
+        console.error(e)
         await sleep(1000 * 10); // If an error occurs, wait 10 seconds before allowing another save attempt
         isFinalSaving = false;
     }
