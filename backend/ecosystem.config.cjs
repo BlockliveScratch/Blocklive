@@ -7,7 +7,7 @@ if (result.error) {
 module.exports = {
     apps: [
         {
-            name: "LiveScratch",
+            name: "server",
             script: "./index.js",
             killTimeout: 60000,
             env: {

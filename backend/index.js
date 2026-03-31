@@ -315,7 +315,7 @@ app.get('/active/:lsId',(req,res)=>{
 });
 
 app.get('/',(req,res)=>{
-    res.send('LiveScratch API');
+    res.send('BlockLiveScratch API');
 });
 
 app.post('/friends/:user/:friend',(req,res)=>{
